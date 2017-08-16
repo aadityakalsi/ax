@@ -1,0 +1,20 @@
+# webservConfig.cmake
+
+# - Config file for the webserv package
+# It defines the following variables
+#  WEBSERV_INCLUDE_DIRS - include directories for webserv
+#  WEBSERV_LIBRARIES    - libraries to link against
+#  WEBSERV_EXECUTABLE   - executable if any
+
+# Compute paths
+get_filename_component(WEBSERV_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+set(WEBSERV_INCLUDE_DIRS include)
+
+# Our library dependencies (contains definitions for IMPORTED targets)
+if(NOT TARGET webserv AND NOT WEBSERV_BINARY_DIR)
+  include("${WEBSERV_CMAKE_DIR}/webservTargets.cmake")
+endif()
+
+# These are IMPORTED targets created by webservTargets.cmake
+set(WEBSERV_LIBRARIES webserv)
+set(WEBSERV_EXECUTABLE )

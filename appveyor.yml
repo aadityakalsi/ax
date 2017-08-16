@@ -1,0 +1,35 @@
+# Versioning
+version: v-{build}
+
+image: Visual Studio 2015
+
+# Configuration
+environment:
+  UNUSED: 1
+  matrix:
+    - CMAKE_BUILD_TYPE: Debug
+    - CMAKE_BUILD_TYPE: Release
+    - CMAKE_BUILD_TYPE: MinSizeRel
+    - CMAKE_BUILD_TYPE: RelWithDebInfo
+
+# Set up clone path (this is the default, but just to make it explicit)
+clone_folder: c:\projects\%APPVEYOR_PROJECT_NAME%
+
+build_script:
+  - cd c:\projects\%APPVEYOR_PROJECT_NAME%
+  - dir .
+  - set "PATH=%PATH:C:\Program Files (x86)\Git\bin=%"
+  - mkdir _build
+  - cmake -H. -B_build -DCMAKE_INSTALL_PREFIX=_install
+  - cmake --build _build --config %CMAKE_BUILD_TYPE%
+  - cmake --build _build --config %CMAKE_BUILD_TYPE% --target tests
+  - cmake --build _build --config %CMAKE_BUILD_TYPE% --target install
+  - dir /s _install
+  - cd tests\install
+  - bash -c "./test.sh"
+
+# Send notifications
+# notifications:
+#   - provider: Email
+#   - to:
+#     - twiddlebits.ak@gmail.com

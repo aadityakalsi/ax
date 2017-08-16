@@ -1,0 +1,34 @@
+# Set the project language
+language: cpp
+
+# Set test platforms
+os:
+  - osx
+  - linux
+
+# Disable use of container-based infrastructure for Linux, because we need to
+# add a non-whitelisted PPA for a newer version of CMake
+sudo: true
+
+# Configuration
+env:
+  global:
+    - UNUSED
+  matrix:
+    - CMAKE_BUILD_TYPE=Debug
+    - CMAKE_BUILD_TYPE=RelWithDebInfo
+    - CMAKE_BUILD_TYPE=Release
+    - CMAKE_BUILD_TYPE=MinSizeRel
+
+# Run the build and the test
+script:
+  - if [[ "`uname`" == "Linux" ]]; then sudo add-apt-repository -y ppa:george-edison55/precise-backports && sudo apt-get update; fi
+  - if [[ "`uname`" == "Linux" ]]; then sudo apt-get install cmake-data cmake; fi
+  - ./build.sh
+  - ls -lhR _install/*
+  - ./tests-install.sh
+
+# Send notifications
+notifications:
+  email:
+    - twiddlebits.ak@gmail.com
