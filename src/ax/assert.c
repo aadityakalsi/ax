@@ -12,7 +12,7 @@ For license details see ../../LICENSE
 #include <stdio.h>
 #include <stdlib.h>
 
-void _axAssertFailed(ax_const_str hdr, ax_const_str msg)
+void _ax_assert_failed(ax_const_str hdr, ax_const_str msg)
 {
     fprintf(stderr, "%s %s\n", hdr, msg);
     abort();

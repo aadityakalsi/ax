@@ -21,8 +21,8 @@ For license details see ../../LICENSE
 #define __STR_(x) #x
 #define __STR(x) __STR_(x)
 
-#define AX_INVARIANT(e) (!!(e)) ? 0 : _axAssertFailed("(" __FILE__ ":" __STR(__LINE__) ") " __STR(e), "")
-#define AX_INVARIANT_MSG(e, m) (!!(e)) ? 0 : _axAssertFailed("(" __FILE__ ":" __STR(__LINE__) ") " __STR(e), m)
+#define AX_INVARIANT(e) (!!(e)) ? 0 : _ax_assert_failed("(" __FILE__ ":" __STR(__LINE__) ") " __STR(e), "")
+#define AX_INVARIANT_MSG(e, m) (!!(e)) ? 0 : _ax_assert_failed("(" __FILE__ ":" __STR(__LINE__) ") " __STR(e), m)
 
 #ifndef NDEBUG
 #  define AX_ASSERT(e) AX_INVARIANT(e)
@@ -33,6 +33,6 @@ For license details see ../../LICENSE
 #endif
 
 AX_API
-void _axAssertFailed(ax_const_str hdr, ax_const_str msg);
+void _ax_assert_failed(ax_const_str hdr, ax_const_str msg);
 
 #endif/*_AX_ASSERT_H_*/

@@ -34,17 +34,17 @@ For license details see ../../LICENSE
 #define AX_LOG(lvl, fmt, ...)                                              \
   if (AX_LOG_##lvl >= AX_MIN_LOG_LEVEL) {                                  \
       char buf[] = "["#lvl"] (" __FILE__ ":" __AX_STR(__LINE__) ") " fmt;  \
-      _axPrintLog(buf, ## __VA_ARGS__);                                    \
+      _ax_print_log(buf, ## __VA_ARGS__);                                  \
   }                                                                        \
   do { } while (0)
 
 AX_API
-void axSetLogFile(FILE* f);
+void ax_set_log_file(FILE* f);
 
 AX_API
-FILE* axGetLogFile();
+FILE* ax_get_log_file();
 
 AX_API
-void _axPrintLog(ax_str fmt, ...);
+void _ax_print_log(ax_str fmt, ...);
 
 #endif/*_AX_LOG_H_*/

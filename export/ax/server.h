@@ -12,6 +12,6 @@ For license details see ../../LICENSE
 
 #include "ax/types.h"
 
-AX_HIDDEN_TYPE(axServer, 1024);
+AX_HIDDEN_TYPE(ax_server_t, 1024);
 
 #endif/*_AX_SERVER_H_*/

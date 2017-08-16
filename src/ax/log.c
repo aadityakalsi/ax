@@ -12,21 +12,21 @@ For license details see ../../LICENSE
 
 #include <stdarg.h>
 
-static FILE* fLogFile = (FILE*)-1;
+static FILE* g_log_file = (FILE*)-1;
 
-void axSetLogFile(FILE* f)
+void ax_set_log_file(FILE* f)
 {
-    fLogFile = f;
+    g_log_file = f;
 }
 
-FILE* axGetLogFile(void)
+FILE* ax_get_log_file(void)
 {
-    return (fLogFile == (FILE*)-1) ? stderr : fLogFile;
+    return (g_log_file == (FILE*)-1) ? stderr : g_log_file;
 }
 
-void _axPrintLog(ax_str fmt, ...)
+void _ax_print_log(ax_str fmt, ...)
 {
-    FILE* const f = axGetLogFile();
+    FILE* const f = ax_get_log_file();
     ax_str p = fmt;
     ax_str last;
     ax_str e;
