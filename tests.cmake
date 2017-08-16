@@ -16,7 +16,7 @@ target_include_directories(
 
 target_link_libraries(tests ax)
 
-add_custom_command(
-  TARGET tests
-  POST_BUILD
+add_custom_target(
+  tests.run
+  DEPENDS tests
   COMMAND $<TARGET_FILE:tests>)

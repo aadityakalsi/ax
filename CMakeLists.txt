@@ -39,7 +39,7 @@ file(GLOB_RECURSE src_files ${PROJECT_SOURCE_DIR}/src/*.c ${PROJECT_SOURCE_DIR}/
 msg("Got export hdrs: ${export_hdr}")
 msg("Got src files: ${src_files}")
 
-add_library(ax ${src_files} $<TARGET_OBJECTS:uv>)
+add_library(ax ${src_files} $<TARGET_OBJECTS:uv> $<TARGET_OBJECTS:http_parser>)
 
 if (BUILD_SHARED_LIBS)
   set(build_flag BUILDING_AX)
@@ -54,11 +54,11 @@ target_compile_definitions(
     AX_VER_MAJ=${ver_maj}
     AX_VER_MIN=${ver_min}
     AX_VER_PATCH=${ver_patch}
-AX_VER_STRING=${ver_string})
+    AX_VER_STRING=${ver_string})
 
 target_include_directories(
   ax
-  PRIVATE include 3p/libuv/include
+  PRIVATE include 3p/libuv/include 3p/http-parser
   PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/export>
          $<INSTALL_INTERFACE:include>)
 
@@ -73,6 +73,11 @@ target_link_libraries(ax PUBLIC $ENV{3p_deps_pub} PRIVATE $ENV{3p_deps_pvt})
 #  cxx_lambdas
 #  cxx_auto_type
 #  cxx_static_assert)
+
+if (BUILD_SHARED_LIBS)
+  set_target_properties(ax PROPERTIES VERSION ${ver_string}
+                                      SOVERSION ${ver_maj})
+endif()
 
 configure_file(
   cmake/axConfig.cmake.in
@@ -121,6 +126,11 @@ install(
   FILES ${PROJECT_SOURCE_DIR}/3p/libuv/LICENSE
   DESTINATION share/ax
   RENAME LICENSE.libuv)
+
+install(
+  FILES ${PROJECT_SOURCE_DIR}/3p/http-parser/LICENSE-MIT
+  DESTINATION share/ax
+  RENAME LICENSE.http-parser)
 
 # TESTS
 

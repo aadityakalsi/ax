@@ -13,6 +13,7 @@ if (BUILD_SHARED_LIBS)
 endif()
 
 add_subdirectory(3p/libuv)
+add_subdirectory(3p/http-parser)
 
 # OS deps
 find_package(Threads)

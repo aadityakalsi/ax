@@ -14,6 +14,6 @@ For license details see ../../LICENSE
 
 void _ax_assert_failed(ax_const_str hdr, ax_const_str msg)
 {
-    fprintf(stderr, "%s %s\n", hdr, msg);
+    fprintf(stderr, "\nASSERT FAIL: %s %s\n", hdr, msg);
     abort();
 }

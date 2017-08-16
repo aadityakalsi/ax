@@ -12,6 +12,15 @@ For license details see ../../LICENSE
 
 #include "ax/types.h"
 
-AX_HIDDEN_TYPE(ax_server_t, 1024);
+AX_HIDDEN_TYPE(ax_server_t, 1536);
+
+AX_API
+int ax_server_init_ip4(ax_server_t* srv, ax_const_str addr, int port);
+
+AX_API
+int ax_server_destroy(ax_server_t* srv);
+
+AX_API
+int ax_server_run_once(ax_server_t* srv);
 
 #endif/*_AX_SERVER_H_*/

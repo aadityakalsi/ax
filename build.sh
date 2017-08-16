@@ -28,5 +28,5 @@ printf "Running CMake\n-------------\n\$ $cmd\n\n"
 
 bash -c "$cmd"
 
-env VERBOSE=1 cmake --build $root/_build --target tests
+env VERBOSE=1 cmake --build $root/_build --target tests.run
 env VERBOSE=1 cmake --build $root/_build --target install
