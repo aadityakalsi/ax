@@ -1,20 +1,20 @@
-# webservConfig.cmake
+# axConfig.cmake
 
-# - Config file for the webserv package
+# - Config file for the ax package
 # It defines the following variables
-#  WEBSERV_INCLUDE_DIRS - include directories for webserv
-#  WEBSERV_LIBRARIES    - libraries to link against
-#  WEBSERV_EXECUTABLE   - executable if any
+#  AX_INCLUDE_DIRS - include directories for ax
+#  AX_LIBRARIES    - libraries to link against
+#  AX_EXECUTABLE   - executable if any
 
 # Compute paths
-get_filename_component(WEBSERV_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-set(WEBSERV_INCLUDE_DIRS include)
+get_filename_component(AX_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+set(AX_INCLUDE_DIRS include)
 
 # Our library dependencies (contains definitions for IMPORTED targets)
-if(NOT TARGET webserv AND NOT WEBSERV_BINARY_DIR)
-  include("${WEBSERV_CMAKE_DIR}/webservTargets.cmake")
+if(NOT TARGET ax AND NOT AX_BINARY_DIR)
+  include("${AX_CMAKE_DIR}/axTargets.cmake")
 endif()
 
-# These are IMPORTED targets created by webservTargets.cmake
-set(WEBSERV_LIBRARIES webserv)
-set(WEBSERV_EXECUTABLE )
+# These are IMPORTED targets created by axTargets.cmake
+set(AX_LIBRARIES ax)
+set(AX_EXECUTABLE )

@@ -8,7 +8,7 @@ file(GLOB src_files ${TESTS_DIR}/*.c ${TESTS_DIR}/*.cpp)
 set(src_dir ${CMAKE_CURRENT_SOURCE_DIR}/_source)
 file(COPY ${src_files} DESTINATION ${src_dir})
 
-find_package(webserv)
+find_package(ax)
 
 file(GLOB src_files ${src_dir}/*.c ${src_dir}/*.cpp)
 
@@ -18,7 +18,7 @@ target_include_directories(
   tests_install
   PRIVATE ${TESTS_DIR})
 
-target_link_libraries(tests_install webserv)
+target_link_libraries(tests_install ax)
 
 add_custom_target(
   tests_run
