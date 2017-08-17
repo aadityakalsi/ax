@@ -12,9 +12,9 @@ For license details see ../../LICENSE
 #if  defined(_WIN32) && !(defined(__MINGW32__) || defined(__MINGW64__))
 #include <intrin.h>
 void _ReadWriteBarrier();
-#pragma intrinsic(_ReadWriteBarrier);
-#pragma intrinsic(_InterlockedCompareExchange);
-#pragma intrinsic(_InterlockedExchangeAdd);
+#pragma intrinsic(_ReadWriteBarrier)
+#pragma intrinsic(_InterlockedCompareExchange)
+#pragma intrinsic(_InterlockedExchangeAdd)
 #define acq_barrier() _ReadWriteBarrier()
 #define rel_barrier() _ReadWriteBarrier()
 #else

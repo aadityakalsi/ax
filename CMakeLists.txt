@@ -43,12 +43,16 @@ add_library(ax ${src_files} $<TARGET_OBJECTS:uv> $<TARGET_OBJECTS:http_parser>)
 
 if (BUILD_SHARED_LIBS)
   set(build_flag BUILDING_AX)
+  set(pub_build_flag)
 else()
-  set(build_flag )
+  set(build_flag BUILDING_AX_STATIC)
+  set(pub_build_flag USING_AX_STATIC)
 endif()
 
 target_compile_definitions(
   ax
+  PUBLIC
+    ${pub_build_flag}
   PRIVATE
     ${build_flag}
     AX_VER_MAJ=${ver_maj}
