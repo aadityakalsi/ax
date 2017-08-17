@@ -64,7 +64,12 @@ target_include_directories(
 
 msg("public  deps: $ENV{3p_deps_pub}")
 msg("private deps: $ENV{3p_deps_pvt}")
-target_link_libraries(ax PUBLIC $ENV{3p_deps_pub} PRIVATE $ENV{3p_deps_pvt})
+
+if (BUILD_SHARED_LIBS)
+  target_link_libraries(ax PUBLIC $ENV{3p_deps_pub} PRIVATE $ENV{3p_deps_pvt})
+else()
+  target_link_libraries(ax PUBLIC $ENV{3p_deps_pub} $ENV{3p_deps_pvt})
+endif()
 
 #target_compile_features(
 #  ax

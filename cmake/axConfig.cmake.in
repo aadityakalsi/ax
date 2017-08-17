@@ -18,3 +18,5 @@ endif()
 # These are IMPORTED targets created by axTargets.cmake
 set(AX_LIBRARIES ax)
 set(AX_EXECUTABLE )
+
+find_package(Threads)
