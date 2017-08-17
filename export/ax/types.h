@@ -10,6 +10,7 @@ For license details see ../../LICENSE
 #ifndef _AX_TYPES_H_
 #define _AX_TYPES_H_
 
+#include "ax/config.h"
 #include "ax/exports.h"
 
 #include <stddef.h>
@@ -23,6 +24,7 @@ typedef uint32_t    ax_u32;
 typedef int32_t     ax_i32;
 typedef uint64_t    ax_u64;
 typedef int64_t     ax_i64;
+typedef size_t      ax_sz ;
 typedef double      ax_dbl;
 typedef float       ax_flt;
 typedef char*       ax_str;
@@ -39,11 +41,5 @@ typedef char const* ax_const_str;
   {                            \
       char __data[sz];         \
   }
-
-AX_API
-ax_u32 ax_aload_u32(ax_u32* p);
-
-AX_API
-void ax_astore_u32(ax_u32* p, ax_u32 val);
 
 #endif/*_AX_TYPES_H_*/
