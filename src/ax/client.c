@@ -103,9 +103,8 @@ int ax_client_destroy(ax_client_t* cli)
     }
 
     uv_walk(&s->loop, ax__close_all_handles, AX_NULL);
-    s->loop.stop_flag = 0;
 
-    if ((ret = uv_run(&s->loop, UV_RUN_NOWAIT))) {
+    if ((ret = uv_run(&s->loop, UV_RUN_DEFAULT))) {
         AX_LOG(DBUG, "loop_run: %s\n", uv_strerror(ret));
         goto ax_client_destroy_done;
     }
