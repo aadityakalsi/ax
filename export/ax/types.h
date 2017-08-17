@@ -40,4 +40,10 @@ typedef char const* ax_const_str;
       char __data[sz];         \
   }
 
+AX_API
+ax_u32 ax_aload_u32(ax_u32* p);
+
+AX_API
+void ax_astore_u32(ax_u32* p, ax_u32 val);
+
 #endif/*_AX_TYPES_H_*/

@@ -41,9 +41,6 @@ void ax__close_all_handles(uv_handle_t* h, void* unused)
     AX_ASSERT(unused == AX_NULL);
     if (!uv_is_closing(h) && uv_is_active(h)) {
         uv_close(h, AX_NULL);
-        if (uv_has_ref(h)) {
-            uv_unref(h);
-        }
     }
 }
 
@@ -104,9 +101,8 @@ int ax_server_destroy(ax_server_t* srv)
     }
 
     uv_walk(&s->loop, ax__close_all_handles, AX_NULL);
-    s->loop.stop_flag = 0;
 
-    if ((ret = uv_run(&s->loop, UV_RUN_NOWAIT))) {
+    if ((ret = uv_run(&s->loop, UV_RUN_DEFAULT))) {
         AX_LOG(DBUG, "loop_run: %s\n", uv_strerror(ret));
         goto ax_server_destroy_done;
     }

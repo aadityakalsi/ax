@@ -7,16 +7,16 @@ For license details see ../../LICENSE
  * \date Aug 16, 2017
  */
 
- #include "ax/assert.h"
- #include "ax/client.h"
- 
- #define AX_MIN_LOG_LEVEL AX_LOG_INFO
- #include "ax/log.h"
- 
- #include <uv.h>
- 
- #include <string.h>
- 
+#include "ax/assert.h"
+#include "ax/client.h"
+
+#define AX_MIN_LOG_LEVEL AX_LOG_INFO
+#include "ax/log.h"
+
+#include <uv.h>
+
+#include <string.h>
+
 AX_STRUCT_TYPE(ax_client_impl_t)
 {
     uv_loop_t loop;
