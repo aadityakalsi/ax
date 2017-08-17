@@ -4,10 +4,14 @@
 #define _AX_VERSION_H_
 
 #if defined(_WIN32) && !defined(__GCC__)
-#  ifdef BUILDING_AX
-#    define AX_API __declspec(dllexport)
+#  if defined(BUILDING_AX_STATIC) || defined(USING_AX_STATIC)
+#    define AX_API
 #  else
-#    define AX_API __declspec(dllimport)
+#    ifdef BUILDING_AX
+#      define AX_API __declspec(dllexport)
+#    else
+#      define AX_API __declspec(dllimport)
+#    endif
 #  endif
 #  ifndef _CRT_SECURE_NO_WARNINGS
 #    define _CRT_SECURE_NO_WARNINGS
