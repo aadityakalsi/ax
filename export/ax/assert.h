@@ -21,8 +21,15 @@ For license details see ../../LICENSE
 #define __STR_(x) #x
 #define __STR(x) __STR_(x)
 
-#define AX_INVARIANT(e) (!!(e)) ? 0 : _ax_assert_failed("(" __FILE__ ":" __STR(__LINE__) ") " __STR(e), "")
-#define AX_INVARIANT_MSG(e, m) (!!(e)) ? 0 : _ax_assert_failed("(" __FILE__ ":" __STR(__LINE__) ") " __STR(e), m)
+#define AX_INVARIANT(e)                                                     \
+  if (!(e)) {                                                               \
+    _ax_assert_failed("(" __FILE__ ":" __STR(__LINE__) ") " __STR(e), 0);   \
+  }
+
+#define AX_INVARIANT_MSG(e, m)                                              \
+  if (!(e)) {                                                               \
+    _ax_assert_failed("(" __FILE__ ":" __STR(__LINE__) ") " __STR(e), m);   \
+  }
 
 #ifndef NDEBUG
 #  define AX_ASSERT(e) AX_INVARIANT(e)

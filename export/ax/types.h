@@ -39,7 +39,10 @@ typedef char const* ax_const_str;
 #define AX_HIDDEN_TYPE(ty, sz) \
   AX_STRUCT_TYPE(ty)           \
   {                            \
+      union {                  \
       char __data[sz];         \
+      double __align;          \
+      };                       \
   }
 
 #endif/*_AX_TYPES_H_*/
