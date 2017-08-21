@@ -12,6 +12,8 @@ For license details see ../../LICENSE
 
 #include <uv.h>
 
+#include <string.h>
+
 AX_STATIC_ASSERT(sizeof(ax_thread_t) >= sizeof(uv_thread_t), ax_thread_t_too_small);
 
 #define to_uv(x) ((uv_thread_t*)(x))

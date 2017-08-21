@@ -45,8 +45,8 @@ if (BUILD_SHARED_LIBS)
   set(build_flag BUILDING_AX)
   set(pub_build_flag)
 else()
-  set(build_flag BUILDING_AX_STATIC)
-  set(pub_build_flag USING_AX_STATIC)
+  set(build_flag )
+  set(pub_build_flag AX_STATIC_BUILD)
 endif()
 
 target_compile_definitions(

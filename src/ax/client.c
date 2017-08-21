@@ -27,7 +27,7 @@ AX_STRUCT_TYPE(ax_client_impl_t)
 AX_STATIC_ASSERT(sizeof(ax_client_t) >= sizeof(ax_client_impl_t), type_too_small);
 
 static
-void ax__client_on_connect(uv_stream_t* strm, int status)
+void ax__client_on_connect(uv_connect_t* strm, int status)
 {
     AX_LOG(DBUG, "connect: %s\n", status ? uv_strerror(status) : "OK");
     if (status) { return; }
@@ -84,7 +84,7 @@ int ax_client_init_ip4(ax_client_t* cli, ax_const_str addr, int port)
         goto ax_client_init_done;
     }
 
-    if ((ret = uv_tcp_connect(&s->conn, &s->server, &saddr, ax__client_on_connect))) {
+    if ((ret = uv_tcp_connect(&s->conn, &s->server, (struct sockaddr const*)&saddr, ax__client_on_connect))) {
         AX_LOG(DBUG, "connect: %s\n", uv_strerror(ret));
         goto ax_client_init_done;
     }

@@ -133,11 +133,15 @@ else()
   
 endif()
 
-if (BUILD_SHARED_LIBS)
   target_compile_definitions(
     uv
-    PRIVATE BUILDING_UV_SHARED)
-endif()
+    PRIVATE UV_EXTERN=)
+
+# if (BUILD_SHARED_LIBS)
+#   target_compile_definitions(
+#     uv
+#     PRIVATE BUILDING_UV_SHARED)
+# endif()
 
 # # Layout. This works for all platforms:
 # #   * <prefix>/lib/cmake/<PROJECT-NAME>

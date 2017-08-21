@@ -27,6 +27,8 @@
 extern "C" {
 #endif
 
+#ifndef UV_EXTERN
+
 #ifdef _WIN32
   /* Windows - set up dll import/export decorators. */
 # if defined(BUILDING_UV_SHARED)
@@ -43,6 +45,8 @@ extern "C" {
 # define UV_EXTERN __attribute__((visibility("default")))
 #else
 # define UV_EXTERN /* nothing */
+#endif
+
 #endif
 
 #include "uv-errno.h"
