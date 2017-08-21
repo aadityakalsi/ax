@@ -43,7 +43,7 @@ int ax_st_init(ax_st_t* st, ax_sz init_size, ax_flt load_fac)
 
 int ax_st_init_default(ax_st_t* st)
 {
-    return ax_st_init(st, 0, 0.618);
+    return ax_st_init(st, 0, (ax_flt)0.618);
 }
 
 ax_st_pair_t* ax_st_find(ax_st_t const* st, ax_const_str key)
