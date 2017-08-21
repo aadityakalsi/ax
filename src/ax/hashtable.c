@@ -50,7 +50,7 @@ int rehash(ax_ht_t* ht)
     ax_ht_elem_t* next;
     ax_sz idx;
     
-    div = ceilf(div);
+    div = (div - (ax_sz)div) > 0 ? ((ax_sz)div + 1) : div;
     newcap = next_pow_2((ax_sz)div) - 1;
     newcap = newcap < 7 ? 7 : newcap;
     if (newcap < ht->cap) {
@@ -81,11 +81,12 @@ int rehash(ax_ht_t* ht)
     return 0;
 }
 
-int ax_ht_init(ax_ht_t* ht, ax_sz init_size, ax_flt load_fac, ax_ht_hash_fn hash, ax_ht_eq_fn eq, ax_ht_delete_fn del)
+int ax_ht_init(ax_ht_t* ht, ax_sz init_size, ax_flt load_fac, ax_ht_hash_fn hash, ax_ht_eq_fn eq,
+               ax_ht_delete_fn del, ax_sz arena_align)
 {
     ax_ht_elem_t** buckets = create_buckets(init_size);
 
-    if ((!buckets && init_size != 0) || ax_arena_init_default(&ht->arena)) {
+    if ((!buckets && init_size != 0) || ax_arena_init(&ht->arena, 1024, arena_align)) {
         return UV__ENOMEM;
     }
 
@@ -102,7 +103,7 @@ int ax_ht_init(ax_ht_t* ht, ax_sz init_size, ax_flt load_fac, ax_ht_hash_fn hash
 
 int ax_ht_init_default(ax_ht_t* ht, ax_ht_hash_fn hash, ax_ht_eq_fn eq, ax_ht_delete_fn del)
 {
-    return ax_ht_init(ht, 0, (ax_flt)0.618, hash, eq, del);
+    return ax_ht_init(ht, 0, (ax_flt)0.618, hash, eq, del, 8);
 }
 
 ax_ht_entry_t* ax_ht_find(ax_ht_t const* ht, void const* key)
@@ -171,7 +172,46 @@ ax_ht_entry_t* ax_ht_insert(ax_ht_t* ht, void const* key, void const* value, int
     return ret;
 }
 
-void ax_ht_erase(ax_ht_t* ht, void const* key);
+void ax_ht_foreach(ax_ht_t const* ht, ax_ht_visit_fn fn)
+{
+    for (ax_sz i = 0; i < ht->cap; ++i) {
+        ax_ht_elem_t* el = ht->buckets[i];
+        while (el) {
+            fn(el->key, el->value);
+            el = el->next;
+        }
+    }
+}
+
+int ax_ht_erase(ax_ht_t* ht, void const* key)
+{
+    ax_sz h = ht->hash_fn(key);
+    ax_sz h_mod;
+    ax_ht_elem_t* el;
+    ax_ht_elem_t* prev = AX_NULL;
+    int ret = 0;
+
+    if (ht->buckets) {
+        h_mod = h % (ht->cap);
+        el = ht->buckets[h_mod];
+        while (el) {
+            if (el->key == key || ht->eq_fn(el->key, key)) {
+                if (prev == AX_NULL) {
+                    ht->buckets[h_mod] = el->next;
+                } else {
+                    prev->next = el->next;
+                }
+                ht->del_fn(el->key, el->value);
+                ret = 1;
+                break;
+            }
+            prev = el;
+            el = el->next;
+        }
+    }
+
+    return ret;
+}
 
 int ax_ht_destroy(ax_ht_t* ht)
 {

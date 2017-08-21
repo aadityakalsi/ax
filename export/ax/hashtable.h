@@ -30,6 +30,7 @@ AX_STRUCT_TYPE(ax_ht_entry_t)
 typedef int (*ax_ht_eq_fn)(void const* k0, void const* k1);
 typedef ax_sz (*ax_ht_hash_fn)(void const* k);
 typedef void (*ax_ht_delete_fn)(void* key, void* value);
+typedef void (*ax_ht_visit_fn)(void const* key, void const* value);
 
 AX_STRUCT_TYPE(ax_ht_t)
 {
@@ -44,7 +45,7 @@ AX_STRUCT_TYPE(ax_ht_t)
 };
 
 AX_API
-int ax_ht_init(ax_ht_t* ht, ax_sz init_size, ax_flt load_fac, ax_ht_hash_fn hash, ax_ht_eq_fn eq, ax_ht_delete_fn del);
+int ax_ht_init(ax_ht_t* ht, ax_sz init_size, ax_flt load_fac, ax_ht_hash_fn hash, ax_ht_eq_fn eq, ax_ht_delete_fn del, ax_sz arena_align);
 
 AX_API
 int ax_ht_init_default(ax_ht_t* ht, ax_ht_hash_fn hash, ax_ht_eq_fn eq, ax_ht_delete_fn del);
@@ -56,7 +57,10 @@ AX_API
 ax_ht_entry_t* ax_ht_insert(ax_ht_t* ht, void const* key, void const* value, int* ins);
 
 AX_API
-void ax_ht_erase(ax_ht_t* ht, void const* key);
+void ax_ht_foreach(ax_ht_t const* ht, ax_ht_visit_fn fn);
+
+AX_API
+int ax_ht_erase(ax_ht_t* ht, void const* key);
 
 AX_API
 int ax_ht_destroy(ax_ht_t* ht);
