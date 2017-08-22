@@ -37,7 +37,7 @@ void ax__st_del(void* k, void* v)
 
 int ax_st_init(ax_st_t* st, ax_sz init_size, ax_flt load_fac)
 {
-    /* align by 64 to allow string growth */
+    /* align by 32 to allow string growth */
     return ax_ht_init(st, init_size, load_fac, ax__st_hash, ax__st_eq, ax__st_del, 32);
 }
 
@@ -58,11 +58,11 @@ ax_str ax_st_create_str(ax_st_t* st, ax_const_str copy_from)
     return s ? (ax_str)memcpy(s, copy_from, str_len + 1) : AX_NULL;
 }
 
-ax_sz  ax_st_str_capacity(ax_st_t const* st, ax_const_str s)
+ax_sz ax_st_str_capacity(ax_st_t const* st, ax_const_str s)
 {
     ax_sz align = st->arena.align;
     ax_sz len = s ? strlen(s) : 0;
-    return (len + align) & ~(align - 1);
+    return ((len + align) & ~(align - 1)) - 1;
 }
 
 ax_st_pair_t* ax_st_insert(ax_st_t* st, ax_const_str key, ax_str value, int* ins)
