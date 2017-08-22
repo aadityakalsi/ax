@@ -3,7 +3,7 @@ For license details see ../../LICENSE
 */
 
 /**
- * \file hashtable.c
+ * \file assoc_array.c
  * \date Aug 21, 2017
  */
 
@@ -43,7 +43,7 @@ void del_kv(void* k, void* v)
 }
 
 static
-void basic(void)
+void hashtable(void)
 {
     ax_ht_t ht;
     ax_ht_entry_t* e;
@@ -172,7 +172,7 @@ void basic(void)
 }
 
 static
-void basic_strtbl(void)
+void stringtable(void)
 {
     ax_st_t st;
     ax_st_pair_t* e;
@@ -301,8 +301,8 @@ void basic_strtbl(void)
     testThat(ax_st_destroy(&st) == 0);
 }
 
-setupSuite(ht)
+setupSuite(assoc_array)
 {
-    addTest(basic);
-    addTest(basic_strtbl);
+    addTest(hashtable);
+    addTest(stringtable);
 }
