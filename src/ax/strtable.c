@@ -88,7 +88,8 @@ ax_st_pair_t* ax_st_insert(ax_st_t* st, ax_const_str key, ax_str value, int* ins
 
 void ax_st_foreach(ax_st_t const* st, ax_st_visit_fn fn)
 {
-    for (ax_sz i = 0; i < st->cap; ++i) {
+    ax_sz i;
+    for (i = 0; i < st->cap; ++i) {
         ax_ht_elem_t* el = st->buckets[i];
         while (el) {
             fn((ax_const_str)el->key, (ax_str)el->value);

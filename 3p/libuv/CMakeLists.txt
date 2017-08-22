@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 
 project(libuv)
 
@@ -110,6 +110,8 @@ else()
       src/unix/pthread-fixes.c
       src/unix/pthread-barrier.c)
   endif()
+  
+  add_compile_options(-fvisibility=hidden)
 endif()
 
 add_library(uv OBJECT ${SOURCES})
@@ -130,12 +132,11 @@ else()
 
   set(extra_libs ${extra_libs} ${CMAKE_DL_LIBS})
   add_3p_deps_pvt("Threads::Threads;${extra_libs}")
-  
 endif()
 
-  target_compile_definitions(
-    uv
-    PRIVATE UV_EXTERN=)
+target_compile_definitions(
+  uv
+  PRIVATE UV_EXTERN=)
 
 # if (BUILD_SHARED_LIBS)
 #   target_compile_definitions(

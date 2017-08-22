@@ -48,6 +48,7 @@ int rehash(ax_ht_t* ht)
     ax_ht_elem_t** buckets;
     ax_ht_elem_t* el;
     ax_ht_elem_t* next;
+    ax_sz i;
     ax_sz idx;
     
     div = (div - (ax_sz)div) > 0 ? ((ax_sz)div + 1) : div;
@@ -62,7 +63,7 @@ int rehash(ax_ht_t* ht)
         return UV__ENOMEM;
     }
 
-    for (ax_sz i = 0; i < ht->cap; ++i) {
+    for (i = 0; i < ht->cap; ++i) {
         el = ht->buckets[i];
         ht->buckets[i] = AX_NULL;
         while (el) {
@@ -174,7 +175,8 @@ ax_ht_entry_t* ax_ht_insert(ax_ht_t* ht, void const* key, void const* value, int
 
 void ax_ht_foreach(ax_ht_t const* ht, ax_ht_visit_fn fn)
 {
-    for (ax_sz i = 0; i < ht->cap; ++i) {
+    ax_sz i;
+    for (i = 0; i < ht->cap; ++i) {
         ax_ht_elem_t* el = ht->buckets[i];
         while (el) {
             fn(el->key, el->value);
@@ -215,7 +217,8 @@ int ax_ht_erase(ax_ht_t* ht, void const* key)
 
 int ax_ht_destroy(ax_ht_t* ht)
 {
-    for (ax_sz i = 0; i < ht->cap; ++i) {
+    ax_sz i;
+    for (i = 0; i < ht->cap; ++i) {
         ax_ht_elem_t* el = ht->buckets[i];
         while (el) {
             ht->del_fn(el->key, el->value);
