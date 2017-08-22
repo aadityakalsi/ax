@@ -4,7 +4,7 @@
 #define _AX_VERSION_H_
 
 #if defined(_WIN32) && !defined(__GCC__)
-#  if defined(AX_STATIC)
+#  if defined(AX_STATIC_BUILD)
 #    define AX_API
 #  else
 #    ifdef BUILDING_AX
