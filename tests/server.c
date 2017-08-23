@@ -36,12 +36,14 @@ typedef struct
 
 static ax_atm_i32 start_connect = 0;
 static srv_cli_status_t test;
+static ax_server_t srv;
+static ax_client_t cli;
 
 static
 void client_on_connect(void* u, int status)
 {
     ((srv_cli_status_t*)u)->status_client = status;
-    ax_atomic_i32_store(&start_connect, 0);
+    ax_client_stop(&cli);
 }
 
 static
@@ -55,21 +57,19 @@ static
 void server_on_connect(void* u, int status)
 {
     ((srv_cli_status_t*)u)->status_server = status;
+    ax_server_stop(&srv);
 }
 
 static
 void wait_and_connect(void* a)
 {
-    ax_client_t* c = (ax_client_t*)a;
+    ax_client_t* c = &cli;
     while (ax_atomic_i32_load(&start_connect) != 1) { }
-    ax_client_run_once(c);
-    ax_client_run_once(c);
+    ax_client_connect(c);
 }
 
 void create_connect_destroy(void)
 {
-    ax_server_t srv;
-    ax_client_t cli;
     ax_thread_t cli_tid;
     ax_server_cbk_t srv_cbk = {
         &test,
@@ -89,17 +89,13 @@ void create_connect_destroy(void)
     ax_client_set_callbacks(&cli, &cli_cbk);
     testThat(ax_server_init_ip4(&srv, "localhost", 8080) == 0);
     testThat(ax_client_init_ip4(&cli, "localhost", 8080) == 0);
-    testThat(ax_thread_create(&cli_tid, wait_and_connect, &cli) == 0);
-    testThat(ax_server_run_once(&srv) == 1);
-    while (ax_atomic_i32_load(&start_connect) != 0) { }
-#if AX_MSVC
-    testThat(ax_server_run_once(&srv) == 1);
-#endif
+    testThat(ax_thread_create(&cli_tid, wait_and_connect, AX_NULL) == 0);
+    testThat(ax_server_start(&srv) == 1);
     testThat(ax_thread_join(&cli_tid) == 0);
     testThat(ax_client_destroy(&cli) == 0);
     testThat(ax_server_destroy(&srv) == 0);
-    testThat(test.status_server != 500);
-    testThat(test.status_client != 500);
+    testThat(test.status_server == 0);
+    testThat(test.status_client == 0);
 }
 
 /*--------------------------------------------------*/

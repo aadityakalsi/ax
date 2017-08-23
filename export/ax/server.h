@@ -36,9 +36,9 @@ AX_API
 void ax_server_set_callbacks(ax_server_t* srv, ax_server_cbk_t const* cbk);
 
 AX_API
-int ax_server_run_once(ax_server_t* srv);
+int ax_server_start(ax_server_t* srv);
 
 AX_API
-int ax_server_start(ax_server_t* srv);
+void ax_server_stop(ax_server_t* srv);
 
 #endif/*_AX_SERVER_H_*/

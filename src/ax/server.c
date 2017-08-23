@@ -139,19 +139,6 @@ void ax_server_set_callbacks(ax_server_t* srv, ax_server_cbk_t const* cbk)
     ((ax_server_impl_t*)srv)->cbk = *cbk;
 }
 
-int ax_server_run_once(ax_server_t* srv)
-{
-    ax_server_impl_t* s = (ax_server_impl_t*)srv;
-    int ret;
-    ret = ax__server_ensure_listening(s);
-    if (ret) return ret;
-    ret = uv_run(&s->loop, UV_RUN_ONCE);
-    if (ret) {
-        AX_LOG(INFO, "loop_run_once: %s\n", uv_strerror(ret));
-    }
-    return ret;
-}
-
 int ax_server_start(ax_server_t* srv)
 {
     ax_server_impl_t* s = (ax_server_impl_t*)srv;
@@ -163,4 +150,10 @@ int ax_server_start(ax_server_t* srv)
         AX_LOG(INFO, "loop_run_once: %s\n", uv_strerror(ret));
     }
     return ret;
+}
+
+void ax_server_stop(ax_server_t* srv)
+{
+    ax_server_impl_t* s = (ax_server_impl_t*)srv;
+    uv_stop(&s->loop);
 }

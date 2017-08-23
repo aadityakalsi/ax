@@ -168,3 +168,9 @@ int ax_client_connect(ax_client_t* cli)
     }
     return ret;
 }
+
+void ax_client_stop(ax_client_t* cli)
+{
+    ax_client_impl_t* c = (ax_client_impl_t*)cli;
+    uv_stop(&c->loop);
+}

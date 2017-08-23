@@ -28,9 +28,9 @@ AX_API
 void ax_client_set_callbacks(ax_client_t* cli, ax_client_cbk_t const* cbk);
 
 AX_API
-int ax_client_run_once(ax_client_t* cli);
+int ax_client_connect(ax_client_t* cli);
 
 AX_API
-int ax_client_connect(ax_client_t* cli);
+void ax_client_stop(ax_client_t* cli);
 
 #endif/*_AX_CLIENT_H_*/
