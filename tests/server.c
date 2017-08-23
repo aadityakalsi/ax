@@ -92,7 +92,6 @@ void create_connect_destroy(void)
     testThat(ax_thread_create(&cli_tid, wait_and_connect, &cli) == 0);
     testThat(ax_server_run_once(&srv) == 1);
     while (ax_atomic_i32_load(&start_connect) != 0) { }
-    testThat(ax_server_run_once(&srv) == 1);
     testThat(ax_thread_join(&cli_tid) == 0);
     testThat(ax_client_destroy(&cli) == 0);
     testThat(ax_server_destroy(&srv) == 0);
