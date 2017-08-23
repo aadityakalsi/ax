@@ -24,17 +24,20 @@ AX_STRUCT_TYPE(ax_client_impl_t)
     uv_connect_t conn;
     char saddr[64];
     ax_u32 state;
+    ax_client_cbk_t cbk;
 };
 
 AX_STATIC_ASSERT(sizeof(ax_client_t) >= sizeof(ax_client_impl_t), type_too_small);
 
 #define ax_client_connected(x) ((x)->state & 1)
-#define ax_client_set_connected(x,tf) ((x)->state = ((x)->state & ~((ax_u32)0)) | (tf ? 1 : 0))
+#define ax_client_set_connected(x,tf) ((x)->state = ((x)->state & ~((ax_u32)1)) | (tf ? 1 : 0))
 
 static
 void ax__client_on_connect(uv_connect_t* strm, int status)
 {
     AX_LOG(DBUG, "connect: %s\n", status ? uv_strerror(status) : "OK");
+    ax_client_impl_t* c = (ax_client_impl_t*)(((ax_u8*)strm) - offsetof(ax_client_impl_t, conn));
+    c->cbk.connect_fn(c->cbk.userdata, status);
     if (status) { return; }
     
 }
@@ -103,6 +106,8 @@ int ax_client_init_ip4(ax_client_t* cli, ax_const_str addr, int port)
     }
 
 ax_client_init_done:
+    c->state = 0;
+    ax_client_set_connected(c, 0);
     return ret;
 }
 
@@ -131,6 +136,11 @@ int ax_client_destroy(ax_client_t* cli)
 
 ax_client_destroy_done:
     return ret;
+}
+
+void ax_client_set_callbacks(ax_client_t* cli, ax_client_cbk_t const* cbk)
+{
+    ((ax_client_impl_t*)cli)->cbk = *cbk;
 }
 
 int ax_client_run_once(ax_client_t* cli)

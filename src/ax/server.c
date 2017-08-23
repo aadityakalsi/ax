@@ -22,10 +22,11 @@ AX_STRUCT_TYPE(ax_server_impl_t)
     uv_loop_t loop;
     uv_tcp_t server;
     ax_u32 state;
+    ax_server_cbk_t cbk;
 };
 
 #define ax_server_listening(x) ((x)->state & 1)
-#define ax_server_set_listening(x,tf) ((x)->state = ((x)->state & ~((ax_u32)0)) | (tf ? 1 : 0))
+#define ax_server_set_listening(x,tf) ((x)->state = ((x)->state & ~((ax_u32)1)) | (tf ? 1 : 0))
 
 AX_STATIC_ASSERT(sizeof(ax_server_t) >= sizeof(ax_server_impl_t), type_too_small);
 
@@ -35,6 +36,8 @@ static
 void ax__server_on_connect(uv_stream_t* strm, int status)
 {
     AX_LOG(DBUG, "connect: %s\n", status ? uv_strerror(status) : "OK");
+    ax_server_impl_t* s = (ax_server_impl_t*)(((ax_u8*)strm) - offsetof(ax_server_impl_t, server));
+    s->cbk.connect_fn(s->cbk.userdata, status);
     if (status) { return; }
     
 }
@@ -48,6 +51,7 @@ int ax__server_ensure_listening(ax_server_impl_t* s)
         AX_LOG(DBUG, "listen: %s\n", uv_strerror(ret));
     } else {
         ax_server_set_listening(s, 1);
+        s->cbk.listen_fn(s->cbk.userdata);
     }
     return ret;
 }
@@ -99,9 +103,9 @@ int ax_server_init_ip4(ax_server_t* srv, ax_const_str addr, int port)
         goto ax_server_init_done;
     }
 
-    ax_server_set_listening(s, 0);
-
 ax_server_init_done:
+    s->state = 0;
+    ax_server_set_listening(s, 0);
     return ret;
 }
 
@@ -130,14 +134,17 @@ ax_server_destroy_done:
     return ret;
 }
 
+void ax_server_set_callbacks(ax_server_t* srv, ax_server_cbk_t const* cbk)
+{
+    ((ax_server_impl_t*)srv)->cbk = *cbk;
+}
+
 int ax_server_run_once(ax_server_t* srv)
 {
     ax_server_impl_t* s = (ax_server_impl_t*)srv;
     int ret;
     ret = ax__server_ensure_listening(s);
-    if (ret) {
-        return ret;
-    }
+    if (ret) return ret;
     ret = uv_run(&s->loop, UV_RUN_ONCE);
     if (ret) {
         AX_LOG(INFO, "loop_run_once: %s\n", uv_strerror(ret));
@@ -150,9 +157,7 @@ int ax_server_start(ax_server_t* srv)
     ax_server_impl_t* s = (ax_server_impl_t*)srv;
     int ret;
     ret = ax__server_ensure_listening(s);
-    if (ret) {
-        return ret;
-    }
+    if (ret) return ret;
     ret = uv_run(&s->loop, UV_RUN_DEFAULT);
     if (ret) {
         AX_LOG(INFO, "loop_run_once: %s\n", uv_strerror(ret));
