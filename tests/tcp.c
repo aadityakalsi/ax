@@ -3,7 +3,7 @@ For license details see ../../LICENSE
 */
 
 /**
- * \file server.c
+ * \file tcp.c
  * \date Aug 15, 2017
  */
 
@@ -101,7 +101,7 @@ void create_connect_destroy(void)
 /*--------------------------------------------------*/
 
 /*--------------------------------------------------*/
-setupSuite(server)
+setupSuite(tcp)
 {
     addTest(create_destroy);
     addTest(create_connect_destroy);
