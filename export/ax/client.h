@@ -10,7 +10,7 @@ For license details see ../../LICENSE
 #ifndef _AX_CLIENT_H_
 #define _AX_CLIENT_H_
 
-AX_HIDDEN_TYPE(ax_client_t, 1536);
+AX_HIDDEN_TYPE(ax_client_t, 1600);
 
 AX_STRUCT_TYPE(ax_client_cbk_t)
 {
