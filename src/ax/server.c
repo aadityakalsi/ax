@@ -148,13 +148,6 @@ int ax_server_run_once(ax_server_t* srv)
     ret = uv_run(&s->loop, UV_RUN_ONCE);
     if (ret) {
         AX_LOG(INFO, "loop_run_once: %s\n", uv_strerror(ret));
-    } else {
-#if AX_MSVC
-        ret = uv_run(&s->loop, UV_RUN_ONCE);
-        if (ret) {
-            AX_LOG(INFO, "loop_run_once: %s\n", uv_strerror(ret));
-        }
-#endif
     }
     return ret;
 }
