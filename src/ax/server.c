@@ -21,7 +21,11 @@ AX_STRUCT_TYPE(ax_server_impl_t)
 {
     uv_loop_t loop;
     uv_tcp_t server;
+    ax_u32 state;
 };
+
+#define ax_server_listening(x) ((x)->state & 1)
+#define ax_server_set_listening(x,tf) ((x)->state = ((x)->state & ~((ax_u32)0)) | (tf ? 1 : 0))
 
 AX_STATIC_ASSERT(sizeof(ax_server_t) >= sizeof(ax_server_impl_t), type_too_small);
 
@@ -32,7 +36,20 @@ void ax__server_on_connect(uv_stream_t* strm, int status)
 {
     AX_LOG(DBUG, "connect: %s\n", status ? uv_strerror(status) : "OK");
     if (status) { return; }
+    
+}
 
+static
+int ax__server_ensure_listening(ax_server_impl_t* s)
+{
+    int ret;
+    if (ax_server_listening(s)) return 0;
+    if ((ret = uv_listen((uv_stream_t*)&s->server, AX_SERVER_BACKLOG, ax__server_on_connect))) {
+        AX_LOG(DBUG, "listen: %s\n", uv_strerror(ret));
+    } else {
+        ax_server_set_listening(s, 1);
+    }
+    return ret;
 }
 
 static
@@ -82,10 +99,7 @@ int ax_server_init_ip4(ax_server_t* srv, ax_const_str addr, int port)
         goto ax_server_init_done;
     }
 
-    if ((ret = uv_listen((uv_stream_t*)&s->server, AX_SERVER_BACKLOG, ax__server_on_connect))) {
-        AX_LOG(DBUG, "listen: %s\n", uv_strerror(ret));
-        goto ax_server_init_done;
-    }
+    ax_server_set_listening(s, 0);
 
 ax_server_init_done:
     return ret;
@@ -119,7 +133,27 @@ ax_server_destroy_done:
 int ax_server_run_once(ax_server_t* srv)
 {
     ax_server_impl_t* s = (ax_server_impl_t*)srv;
-    int ret = uv_run(&s->loop, UV_RUN_ONCE);
+    int ret;
+    ret = ax__server_ensure_listening(s);
+    if (ret) {
+        return ret;
+    }
+    ret = uv_run(&s->loop, UV_RUN_ONCE);
+    if (ret) {
+        AX_LOG(INFO, "loop_run_once: %s\n", uv_strerror(ret));
+    }
+    return ret;
+}
+
+int ax_server_start(ax_server_t* srv)
+{
+    ax_server_impl_t* s = (ax_server_impl_t*)srv;
+    int ret;
+    ret = ax__server_ensure_listening(s);
+    if (ret) {
+        return ret;
+    }
+    ret = uv_run(&s->loop, UV_RUN_DEFAULT);
     if (ret) {
         AX_LOG(INFO, "loop_run_once: %s\n", uv_strerror(ret));
     }
