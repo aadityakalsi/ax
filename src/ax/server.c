@@ -121,7 +121,7 @@ int ax_server_destroy(ax_server_t* srv)
     uv_walk(&s->loop, ax__close_all_handles, AX_NULL);
 
     if ((ret = uv_run(&s->loop, UV_RUN_DEFAULT))) {
-        AX_LOG(DBUG, "loop_run: %s\n", uv_strerror(ret));
+        AX_LOG(DBUG, "run_default: %s\n", uv_strerror(ret));
         goto ax_server_destroy_done;
     }
 
@@ -147,7 +147,7 @@ int ax_server_start(ax_server_t* srv)
     if (ret) return ret;
     ret = uv_run(&s->loop, UV_RUN_DEFAULT);
     if (ret) {
-        AX_LOG(INFO, "loop_run_once: %s\n", uv_strerror(ret));
+        AX_LOG(INFO, "run_default: %s\n", uv_strerror(ret));
     }
     return ret;
 }

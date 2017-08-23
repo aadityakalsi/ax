@@ -123,7 +123,7 @@ int ax_client_destroy(ax_client_t* cli)
     uv_walk(&c->loop, ax__close_all_handles, AX_NULL);
 
     if ((ret = uv_run(&c->loop, UV_RUN_DEFAULT))) {
-        AX_LOG(DBUG, "loop_run: %s\n", uv_strerror(ret));
+        AX_LOG(DBUG, "run_default: %s\n", uv_strerror(ret));
         goto ax_client_destroy_done;
     }
 
@@ -143,19 +143,6 @@ void ax_client_set_callbacks(ax_client_t* cli, ax_client_cbk_t const* cbk)
     ((ax_client_impl_t*)cli)->cbk = *cbk;
 }
 
-int ax_client_run_once(ax_client_t* cli)
-{
-    ax_client_impl_t* c = (ax_client_impl_t*)cli;
-    int ret;
-    ret = ax__client_ensure_connected(c);
-    if (ret) return ret;
-    ret = uv_run(&c->loop, UV_RUN_ONCE);
-    if (ret) {
-        AX_LOG(INFO, "loop_run_once: %s\n", uv_strerror(ret));
-    }
-    return ret;
-}
-
 int ax_client_connect(ax_client_t* cli)
 {
     ax_client_impl_t* c = (ax_client_impl_t*)cli;
@@ -164,7 +151,7 @@ int ax_client_connect(ax_client_t* cli)
     if (ret) return ret;
     ret = uv_run(&c->loop, UV_RUN_DEFAULT);
     if (ret) {
-        AX_LOG(INFO, "loop_run_once: %s\n", uv_strerror(ret));
+        AX_LOG(INFO, "run_default: %s\n", uv_strerror(ret));
     }
     return ret;
 }
