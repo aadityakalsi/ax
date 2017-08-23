@@ -2,6 +2,6 @@
 
 runSuite(exports);
 runSuite(mem);
-runSuite(assoc_array);
+runSuite(hash);
 runSuite(log);
 runSuite(tcp);

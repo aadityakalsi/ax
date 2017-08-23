@@ -3,7 +3,7 @@ For license details see ../../LICENSE
 */
 
 /**
- * \file assoc_array.c
+ * \file hash.c
  * \date Aug 21, 2017
  */
 
@@ -301,7 +301,7 @@ void stringtable(void)
     testThat(ax_st_destroy(&st) == 0);
 }
 
-setupSuite(assoc_array)
+setupSuite(hash)
 {
     addTest(hashtable);
     addTest(stringtable);
