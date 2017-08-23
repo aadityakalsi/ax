@@ -16,6 +16,7 @@ AX_HIDDEN_TYPE(ax_server_t, 1536);
 
 AX_STRUCT_TYPE(ax_req_t)
 {
+    ax_i32 dummy_;
 };
 
 AX_STRUCT_TYPE(ax_server_cbk_t)
