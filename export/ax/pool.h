@@ -27,7 +27,7 @@ inline static int ax_pool_init(ax_pool_t* p, ax_sz nelem_size)
     ax_sz page_size;
 
     AX_INVARIANT_MSG(nelem_size >= sizeof(void*), "Cannot create a pool with element size less than pointer size");
-    page_size = (1024 >= (nelem_size << 5)) ? 1024 : (((nelem_size + 7) & ~((ax_sz)7)) << 5)
+    page_size = (1024 >= (nelem_size << 5)) ? 1024 : (((nelem_size + 7) & ~((ax_sz)7)) << 5);
     err = ax_arena_init(&p->arena, page_size, 8);
     if (!err) {
         p->head = AX_NULL;
