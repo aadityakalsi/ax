@@ -31,11 +31,11 @@ For license details see ../../LICENSE
 #define __AX_STR_X(x) #x
 #define __AX_STR(x) __AX_STR_X(x)
 
-#define AX_LOG(lvl, fmt, ...)                                              \
-  if (AX_LOG_##lvl >= AX_MIN_LOG_LEVEL) {                                  \
-      char buf[] = "["#lvl"] (" __FILE__ ":" __AX_STR(__LINE__) ") " fmt;  \
-      _ax_print_log(buf, ## __VA_ARGS__);                                  \
-  }                                                                        \
+#define AX_LOG(lvl, fmt, ...)                                                   \
+  if (AX_LOG_##lvl >= AX_MIN_LOG_LEVEL) {                                       \
+      char __xx_buf[] = "["#lvl"] (" __FILE__ ":" __AX_STR(__LINE__) ") " fmt;  \
+      _ax_print_log(__xx_buf, ## __VA_ARGS__);                                  \
+  }                                                                             \
   do { } while (0)
 
 AX_API

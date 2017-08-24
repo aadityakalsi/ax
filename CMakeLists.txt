@@ -155,3 +155,6 @@ set(CPACK_PACKAGE_VERSION_MAJOR ${ver_maj})
 set(CPACK_PACKAGE_VERSION_MINOR ${ver_min})
 set(CPACK_PACKAGE_VERSION_PATCH ${ver_patch})
 include(CPack)
+
+# add examples
+add_subdirectory(examples)

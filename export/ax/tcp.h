@@ -26,6 +26,7 @@ AX_STRUCT_TYPE(ax_tcp_srv_cbk_t)
     void* userdata;
     void (*listen_fn)(void* userdata);
     void (*connect_fn)(void* userdata, int status);
+    void (*accept_fn)(void* userdata, ax_sz clientid);
 };
 
 AX_API

@@ -93,10 +93,10 @@ void create_connect_destroy(void)
     test.status_client = -1;
     ax_atomic_i32_store(&start_connect, 0);
 
-    ax_tcp_srv_set_cbk(&srv, &srv_cbk);
-    ax_tcp_cli_set_cbk(&cli, &cli_cbk);
     testThat(ax_tcp_srv_init_ip4(&srv, "localhost", 8080) == 0);
+    ax_tcp_srv_set_cbk(&srv, &srv_cbk);
     testThat(ax_tcp_cli_init_ip4(&cli, "localhost", 8080) == 0);
+    ax_tcp_cli_set_cbk(&cli, &cli_cbk);
     testThat(ax_thread_create(&cli_tid, wait_and_connect, AX_NULL) == 0);
     testThat(ax_tcp_srv_start(&srv) == 1);
     testThat(ax_thread_join(&cli_tid) == 0);
