@@ -31,9 +31,6 @@ AX_API
 int ax_arena_init(ax_arena_t* ar, ax_sz min_pg_sz, ax_sz align);
 
 AX_API
-int ax_arena_init_default(ax_arena_t* ar);
-
-AX_API
 void* ax_arena_alloc(ax_arena_t* ar, ax_sz sz);
 
 AX_API

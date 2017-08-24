@@ -34,7 +34,7 @@ typedef struct
     int status_client;
 } srv_cli_status_t;
 
-static ax_atm_i32 start_connect = 0;
+static ax_atomic_i32 start_connect = 0;
 static srv_cli_status_t test;
 static ax_server_t srv;
 static ax_client_t cli;

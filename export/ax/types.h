@@ -12,6 +12,7 @@ For license details see ../../LICENSE
 
 #include "ax/config.h"
 #include "ax/exports.h"
+#include "ax/errno.h"
 
 #include <stddef.h>
 #include <stdint.h>

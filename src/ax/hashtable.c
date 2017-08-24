@@ -55,12 +55,12 @@ int rehash(ax_ht_t* ht)
     newcap = next_pow_2((ax_sz)div) - 1;
     newcap = newcap < 7 ? 7 : newcap;
     if (newcap < ht->cap) {
-        return UV__ENOMEM;
+        return AX_ENOMEM;
     }
 
     buckets = create_buckets(newcap);
     if (!buckets) {
-        return UV__ENOMEM;
+        return AX_ENOMEM;
     }
 
     for (i = 0; i < ht->cap; ++i) {
@@ -88,7 +88,7 @@ int ax_ht_init(ax_ht_t* ht, ax_sz init_size, ax_flt load_fac, ax_ht_hash_fn hash
     ax_ht_elem_t** buckets = create_buckets(init_size);
 
     if ((!buckets && init_size != 0) || ax_arena_init(&ht->arena, 1024, arena_align)) {
-        return UV__ENOMEM;
+        return AX_ENOMEM;
     }
 
     ht->buckets = buckets;

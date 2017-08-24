@@ -35,7 +35,7 @@ AX_STATIC_ASSERT(sizeof(ax_client_t) >= sizeof(ax_client_impl_t), type_too_small
 static
 void ax__client_on_connect(uv_connect_t* strm, int status)
 {
-    AX_LOG(DBUG, "connect: %s\n", status ? uv_strerror(status) : "OK");
+    AX_LOG(DBUG, "connect: %s\n", status ? ax_error_str(status) : "OK");
     ax_client_impl_t* c = (ax_client_impl_t*)(((ax_u8*)strm) - offsetof(ax_client_impl_t, conn));
     c->cbk.connect_fn(c->cbk.userdata, status);
     if (status) { return; }
@@ -48,7 +48,7 @@ int ax__client_ensure_connected(ax_client_impl_t* c)
     int ret;
     if (ax_client_connected(c)) return 0;
     if ((ret = uv_tcp_connect(&c->conn, &c->server, (struct sockaddr const*)&c->saddr, ax__client_on_connect))) {
-        AX_LOG(DBUG, "connect: %s\n", uv_strerror(ret));
+        AX_LOG(DBUG, "connect: %s\n", ax_error_str(ret));
     } else {
         ax_client_set_connected(c, 1);
     }
@@ -79,12 +79,12 @@ int ax_client_init_ip4(ax_client_t* cli, ax_const_str addr, int port)
     AX_STATIC_ASSERT(sizeof(saddr)>= sizeof(struct sockaddr_in6), saddr_too_small);
 
     if ((ret = uv_loop_init(&c->loop))) {
-        AX_LOG(DBUG, "loop: %s\n", uv_strerror(ret));
+        AX_LOG(DBUG, "loop: %s\n", ax_error_str(ret));
         goto ax_client_init_done;
     }
 
     if ((ret = uv_tcp_init(&c->loop, &c->server))) {
-        AX_LOG(DBUG, "tcp_init: %s\n", uv_strerror(ret));
+        AX_LOG(DBUG, "tcp_init: %s\n", ax_error_str(ret));
         goto ax_client_init_done;
     }
 
@@ -94,14 +94,14 @@ int ax_client_init_ip4(ax_client_t* cli, ax_const_str addr, int port)
     hints.ai_socktype = 0;
     hints.ai_flags = AI_PASSIVE;
     if ((ret = uv_getaddrinfo(&c->loop, &addrinfo, AX_NULL, addr, port_str, &hints))) {
-        AX_LOG(DBUG, "getaddrinfo: %s\n", uv_strerror(ret));
+        AX_LOG(DBUG, "getaddrinfo: %s\n", ax_error_str(ret));
         goto ax_client_init_done;
     }
     memcpy(&c->saddr, addrinfo.addrinfo->ai_addr, addrinfo.addrinfo->ai_addrlen);
     uv_freeaddrinfo(addrinfo.addrinfo);
 
     if ((ret = uv_tcp_keepalive(&c->server, 1, 60))) {
-        AX_LOG(DBUG, "keepalive: %s\n", uv_strerror(ret));
+        AX_LOG(DBUG, "keepalive: %s\n", ax_error_str(ret));
         goto ax_client_init_done;
     }
 
@@ -123,12 +123,12 @@ int ax_client_destroy(ax_client_t* cli)
     uv_walk(&c->loop, ax__close_all_handles, AX_NULL);
 
     if ((ret = uv_run(&c->loop, UV_RUN_DEFAULT))) {
-        AX_LOG(DBUG, "run_default: %s\n", uv_strerror(ret));
+        AX_LOG(DBUG, "run_default: %s\n", ax_error_str(ret));
         goto ax_client_destroy_done;
     }
 
     if ((ret = uv_loop_close(&c->loop))) {
-        AX_LOG(DBUG, "loop_close: %s\n", uv_strerror(ret));
+        AX_LOG(DBUG, "loop_close: %s\n", ax_error_str(ret));
         goto ax_client_destroy_done;
     }
 
@@ -151,7 +151,7 @@ int ax_client_connect(ax_client_t* cli)
     if (ret) return ret;
     ret = uv_run(&c->loop, UV_RUN_DEFAULT);
     if (ret) {
-        AX_LOG(INFO, "run_default: %s\n", uv_strerror(ret));
+        AX_LOG(INFO, "run_default: %s\n", ax_error_str(ret));
     }
     return ret;
 }

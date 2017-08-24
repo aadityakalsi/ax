@@ -39,7 +39,7 @@ file(GLOB_RECURSE src_files ${PROJECT_SOURCE_DIR}/src/*.c ${PROJECT_SOURCE_DIR}/
 msg("Got export hdrs: ${export_hdr}")
 msg("Got src files: ${src_files}")
 
-add_library(ax ${src_files} $<TARGET_OBJECTS:uv> $<TARGET_OBJECTS:http_parser>)
+add_library(ax ${src_files} ${export_hdr} $<TARGET_OBJECTS:uv> $<TARGET_OBJECTS:http_parser>)
 
 if (BUILD_SHARED_LIBS)
   set(build_flag BUILDING_AX)

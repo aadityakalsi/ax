@@ -49,17 +49,12 @@ int ax_arena_init(ax_arena_t* ar, ax_sz min_pg_sz, ax_sz align)
     AX_ASSERT_MSG((min_pg_sz & (align - 1)) == 0, "Arena min page size should be aligned");
     pg = create_arena_page(min_pg_sz, align);
     if (!pg) {
-        return UV__ENOMEM;
+        return AX_ENOMEM;
     }
     ar->curr = pg;
     ar->min_page_size = min_pg_sz;
     ar->align = align;
     return 0;
-}
-
-int ax_arena_init_default(ax_arena_t* ar)
-{
-    return ax_arena_init(ar, 1024, 8);
 }
 
 void* ax_arena_alloc(ax_arena_t* ar, ax_sz sz)
