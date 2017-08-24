@@ -14,6 +14,9 @@ For license details see ../../LICENSE
 
 #include <errno.h>
 
+typedef char*       ax_str;
+typedef char const* ax_const_str;
+
 #define AX_EOF     (-4095)
 #define AX_UNKNOWN (-4094)
 

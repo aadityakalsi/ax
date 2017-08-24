@@ -28,8 +28,6 @@ typedef int64_t     ax_i64;
 typedef size_t      ax_sz ;
 typedef double      ax_dbl;
 typedef float       ax_flt;
-typedef char*       ax_str;
-typedef char const* ax_const_str;
 
 #define AX_NULL (0)
 
