@@ -12,6 +12,7 @@ For license details see ../../LICENSE
 #include "ax/assert.h"
 #include "ax/log.h"
 #include "ax/pool.h"
+#include "ax/atomic.h"
 
 #include <uv.h>
 
@@ -113,15 +114,19 @@ AX_STATIC_ASSERT(sizeof(ax_tcp_srv_t) >= sizeof(ax_tcp_srv_impl_t), tcp_srv_type
 
 #define AX_SERVER_BACKLOG 128
 
+static ax_atomic_i32 CLIENT_POOL_LOCK = 0;
+
 static
 ax_pool_t* _get_client_conn_pool(void)
 {
     static ax_pool_t CLI_CONN_POOL_STORAGE;
     static ax_pool_t* CLI_CONN_POOL = AX_NULL;
     if (!CLI_CONN_POOL) {
-        if (ax_pool_init(&CLI_CONN_POOL_STORAGE, sizeof(tcp_cli_conn_t)) == 0) {
+        while (ax_atomic_i32_xchg(&CLIENT_POOL_LOCK, 1) == 1) { }
+        if (!CLI_CONN_POOL && ax_pool_init(&CLI_CONN_POOL_STORAGE, sizeof(tcp_cli_conn_t)) == 0) {
             CLI_CONN_POOL = &CLI_CONN_POOL_STORAGE;
         }
+        ax_atomic_i32_store(&CLIENT_POOL_LOCK, 0);
     }
     return CLI_CONN_POOL;
 }
@@ -130,14 +135,20 @@ static
 tcp_cli_conn_t* _create_tcp_client(void)
 {
     ax_pool_t* p = _get_client_conn_pool();
-    return p ? ax_pool_alloc(p) : AX_NULL;
+    tcp_cli_conn_t* mem;
+    while (ax_atomic_i32_xchg(&CLIENT_POOL_LOCK, 1) == 1) { }
+    mem = p ? ax_pool_alloc(p) : AX_NULL;
+    ax_atomic_i32_store(&CLIENT_POOL_LOCK, 0);
+    return mem;
 }
 
 static
 void _destroy_tcp_client(tcp_cli_conn_t* t)
 {
     ax_pool_t* p = _get_client_conn_pool();
-    p ? ax_pool_free(p, t), 0 : 0;
+    while (ax_atomic_i32_xchg(&CLIENT_POOL_LOCK, 1) == 1) { }
+    p ? (ax_pool_free(p, t), 0) : 0;
+    ax_atomic_i32_store(&CLIENT_POOL_LOCK, 0);
 }
 
 static
@@ -159,7 +170,7 @@ static
 void _srv_on_read(uv_stream_t* strm, ssize_t nread, uv_buf_t const* buf)
 {
     if (nread > 0) {
-        AX_LOG(INFO, "data: %.*s", (int)nread, buf->base);
+        AX_LOG(INFO, "data recd (client %p):\n--->|\n%.*s|<---\n", strm, (int)nread, buf->base);
     } else if (nread < 0) {
         AX_LOG(DBUG, "tcp_srv_read_err: (client %p) %s\n", strm, ax_error_str(nread));
         uv_close((uv_handle_t*)strm, _srv_on_close);
