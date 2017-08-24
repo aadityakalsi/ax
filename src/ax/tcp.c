@@ -121,8 +121,6 @@ ax_pool_t* _get_client_conn_pool(void)
     if (!CLI_CONN_POOL) {
         if (ax_pool_init(&CLI_CONN_POOL_STORAGE, sizeof(tcp_cli_conn_t)) == 0) {
             CLI_CONN_POOL = &CLI_CONN_POOL_STORAGE;
-        } else {
-            return AX_NULL;
         }
     }
     return CLI_CONN_POOL;
