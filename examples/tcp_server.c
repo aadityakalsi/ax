@@ -1,5 +1,5 @@
 /*
-For license details see ../../LICENSE
+For license details see ../LICENSE
 */
 
 /**
