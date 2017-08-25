@@ -12,6 +12,8 @@ For license details see ../../LICENSE
 #define AX_MIN_LOG_LEVEL AX_LOG_INFO
 #include "ax/log.h"
 
+#include <string.h>
+
 static
 void log_stderr(void)
 {

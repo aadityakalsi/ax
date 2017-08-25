@@ -45,7 +45,7 @@ void del_kv(void* k, void* v)
 static ax_sz count = 0;
 
 static
-void count_entries(void const* k, void* v)
+void count_entries(void const* k, void const* v)
 {
     ++count;
 }
