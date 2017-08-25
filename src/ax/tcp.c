@@ -63,7 +63,7 @@ void _close_all_handles(uv_handle_t* h, void* unused)
 {
     AX_ASSERT(unused == AX_NULL);
     if (!uv_is_closing(h) && uv_is_active(h)) {
-        uv_close(h, AX_NULL);
+        uv_close(h, h->close_cb);
     }
 }
 
@@ -195,7 +195,7 @@ void _srv_on_connect(uv_stream_t* strm, int status)
         AX_LOG(DBUG, "tcp_srv_init_cli: %s\n", ax_error_str(AX_ENOMEM));
         return;
     }
-    if ((status = uv_tcp_init(&s->loop, conn))) {
+    if ((status = uv_tcp_init(&s->loop, &conn->client))) {
         AX_LOG(DBUG, "tcp_srv_init_cli: %s\n", ax_error_str(status));
         return;
     }
@@ -207,6 +207,7 @@ void _srv_on_connect(uv_stream_t* strm, int status)
     if (s->cbk.accept_fn) {
         s->cbk.accept_fn(s->cbk.userdata, (ax_sz)conn);
     }
+    conn->client.close_cb = _srv_on_close;
     uv_read_start((uv_stream_t*)conn, _create_uv_buf, _srv_on_read);
 }
 
