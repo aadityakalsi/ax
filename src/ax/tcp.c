@@ -7,7 +7,7 @@ For license details see ../../LICENSE
  * \date Aug 23, 2017
  */
 
-#define AX_MIN_LOG_LEVEL AX_LOG_DBUG
+#define AX_MIN_LOG_LEVEL AX_LOG_INFO
 #include "ax/tcp.h"
 #include "ax/assert.h"
 #include "ax/log.h"
