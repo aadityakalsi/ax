@@ -181,7 +181,8 @@ static
 void _srv_on_connect(uv_stream_t* strm, int status)
 {
     AX_LOG(DBUG, "tcp_srv_connect: %s\n", status ? ax_error_str(status) : "OK");
-    ax_tcp_srv_impl_t* s = (ax_tcp_srv_impl_t*)(((ax_u8*)strm) - offsetof(ax_tcp_srv_impl_t, server));
+    // ax_tcp_srv_impl_t* s = (ax_tcp_srv_impl_t*)(((ax_u8*)strm) - offsetof(ax_tcp_srv_impl_t, server));
+    ax_tcp_srv_impl_t* s = BASE_PTR(strm, ax_tcp_srv_impl_t, server);
     tcp_cli_conn_t* conn;
 
     if (s->cbk.connect_fn) {
@@ -299,7 +300,8 @@ static
 void _cli_on_connect(uv_connect_t* strm, int status)
 {
     AX_LOG(DBUG, "tcp_cli_connect: %s\n", status ? ax_error_str(status) : "OK");
-    ax_tcp_cli_impl_t* c = (ax_tcp_cli_impl_t*)(((ax_u8*)strm) - offsetof(ax_tcp_cli_impl_t, conn));
+    // ax_tcp_cli_impl_t* c = (ax_tcp_cli_impl_t*)(((ax_u8*)strm) - offsetof(ax_tcp_cli_impl_t, conn));
+    ax_tcp_cli_impl_t* c = BASE_PTR(strm, ax_tcp_cli_t, conn);
     if (c->cbk.connect_fn) {
         c->cbk.connect_fn(c->cbk.userdata, status);
     }

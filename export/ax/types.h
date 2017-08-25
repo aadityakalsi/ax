@@ -44,4 +44,6 @@ typedef float       ax_flt;
       };                       \
   }
 
+#define BASE_PTR(p,t,f) (t*)(((ax_u8*)p)-offsetof(t,f))
+
 #endif/*_AX_TYPES_H_*/
