@@ -1,7 +1,8 @@
 # .gitignore for ax
 _build/
 _install/
-.vscode/        
+.vscode/
+.idea/
 
     
     

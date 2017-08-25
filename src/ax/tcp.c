@@ -7,7 +7,7 @@ For license details see ../../LICENSE
  * \date Aug 23, 2017
  */
 
-#define AX_MIN_LOG_LEVEL AX_LOG_INFO
+#define AX_MIN_LOG_LEVEL AX_LOG_DBUG
 #include "ax/tcp.h"
 #include "ax/assert.h"
 #include "ax/log.h"
@@ -15,8 +15,6 @@ For license details see ../../LICENSE
 #include "ax/atomic.h"
 
 #include <uv.h>
-
-#include <string.h>
 
 /* tcp common */
 
@@ -104,7 +102,9 @@ AX_STRUCT_TYPE(ax_tcp_srv_impl_t)
 AX_STRUCT_TYPE(tcp_cli_conn_t)
 {
     uv_tcp_t client;
+    ax_tcp_srv_impl_t const* server;
     char buff[CLI_BUFF_SIZE];
+    uv_write_t write;
 };
 
 #define srv_listening(x)        ((x)->state & 1)
@@ -152,9 +152,10 @@ void _destroy_tcp_client(tcp_cli_conn_t* t)
 }
 
 static
-void _create_uv_buf(uv_handle_t* h, size_t sugg_size, uv_buf_t* b)
+void _srv_on_alloc(uv_handle_t *h, size_t sugg_size, uv_buf_t *b)
 {
     tcp_cli_conn_t* c = (tcp_cli_conn_t*)h;
+    (void)sugg_size;
     b->base = c->buff;
     b->len = CLI_BUFF_SIZE;
 }
@@ -166,14 +167,75 @@ void _srv_on_close(uv_handle_t* h)
     _destroy_tcp_client((tcp_cli_conn_t*)h);
 }
 
+static void _srv_start_write(uv_stream_t* strm);
+
+static
+void _srv_write_stat(uv_write_t* w, int status)
+{
+    tcp_cli_conn_t* conn = BASE_PTR(w, tcp_cli_conn_t, write);
+    ax_tcp_srv_impl_t const* s = conn->server;
+    if (s->cbk.write_fn) {
+        s->cbk.write_fn(s->cbk.userdata, status);
+    }
+    if (status) {
+        AX_LOG(DBUG, "tcp_srv_write: %s\n", ax_error_str(status));
+        return;
+    }
+    _srv_start_write((uv_stream_t*)&conn->client);
+}
+
+static void _srv_on_read(uv_stream_t* strm, ssize_t nread, uv_buf_t const* buf);
+
+static
+void _srv_start_write(uv_stream_t* strm)
+{
+    tcp_cli_conn_t* conn = BASE_PTR(strm, tcp_cli_conn_t, client);
+    ax_tcp_srv_impl_t const* s = conn->server;
+    ax_buf_t buf = { AX_STOP_WRITE_NO_READ, 0 };
+    uv_buf_t uv_buf;
+
+    if (s->cbk.write_data_fn) {
+        s->cbk.write_data_fn(s->cbk.userdata, &buf);
+    }
+
+    if (buf.data == AX_STOP_WRITE_NO_READ) {
+        uv_close((uv_handle_t*)strm, strm->close_cb);
+    } else if (buf.data == AX_STOP_WRITE_START_READ) {
+        uv_read_start(strm, _srv_on_alloc, _srv_on_read);
+    } else {
+        uv_buf.base = buf.data;
+        uv_buf.len = (ax_sz)buf.len;
+        uv_write(&conn->write, strm, &uv_buf, 1, _srv_write_stat);
+    }
+}
+
 static
 void _srv_on_read(uv_stream_t* strm, ssize_t nread, uv_buf_t const* buf)
 {
+    tcp_cli_conn_t* conn = BASE_PTR(strm, tcp_cli_conn_t, client);
+    ax_tcp_srv_impl_t const* s = conn->server;
+    ax_buf_t ax_buf;
+    int status = nread > 0 ? 0 : (int)nread;
+
+    if (!s->cbk.data_fn || nread < 0) {
+        AX_LOG(DBUG, "tcp_srv_read_err: (client %p) %s\n", strm, status == 0 ? "OK" : ax_error_str(status));
+        uv_close((uv_handle_t*)strm, _srv_on_close);
+    }
+
     if (nread > 0) {
         AX_LOG(INFO, "data recd (client %p):\n--->|\n%.*s|<---\n", strm, (int)nread, buf->base);
-    } else if (nread < 0) {
-        AX_LOG(DBUG, "tcp_srv_read_err: (client %p) %s\n", strm, ax_error_str(nread));
-        uv_close((uv_handle_t*)strm, _srv_on_close);
+        ax_buf.data = buf->base;
+        ax_buf.len = (ax_i32)buf->len;
+        if (s->cbk.data_fn) {
+            s->cbk.data_fn(s->cbk.userdata, nread > 0 ? 0 : (int) nread, &ax_buf);
+        }
+        if (ax_buf.data == AX_STOP_READ_NO_WRITE) {
+            uv_read_stop(strm);
+            uv_close((uv_handle_t*)strm, _srv_on_close);
+        } else if (ax_buf.data == AX_STOP_READ_START_WRITE) {
+            uv_read_stop(strm);
+            _srv_start_write(strm);
+        }
     }
 }
 
@@ -181,7 +243,6 @@ static
 void _srv_on_connect(uv_stream_t* strm, int status)
 {
     AX_LOG(DBUG, "tcp_srv_connect: %s\n", status ? ax_error_str(status) : "OK");
-    // ax_tcp_srv_impl_t* s = (ax_tcp_srv_impl_t*)(((ax_u8*)strm) - offsetof(ax_tcp_srv_impl_t, server));
     ax_tcp_srv_impl_t* s = BASE_PTR(strm, ax_tcp_srv_impl_t, server);
     tcp_cli_conn_t* conn;
 
@@ -195,6 +256,7 @@ void _srv_on_connect(uv_stream_t* strm, int status)
         AX_LOG(DBUG, "tcp_srv_init_cli: %s\n", ax_error_str(AX_ENOMEM));
         return;
     }
+    conn->server = s;
     if ((status = uv_tcp_init(&s->loop, &conn->client))) {
         AX_LOG(DBUG, "tcp_srv_init_cli: %s\n", ax_error_str(status));
         return;
@@ -208,7 +270,7 @@ void _srv_on_connect(uv_stream_t* strm, int status)
         s->cbk.accept_fn(s->cbk.userdata, (ax_sz)conn);
     }
     conn->client.close_cb = _srv_on_close;
-    uv_read_start((uv_stream_t*)conn, _create_uv_buf, _srv_on_read);
+    uv_read_start((uv_stream_t *) (&conn->client), _srv_on_alloc, _srv_on_read);
 }
 
 static
@@ -288,6 +350,8 @@ AX_STRUCT_TYPE(ax_tcp_cli_impl_t)
     uv_tcp_t server;
     uv_connect_t conn;
     sockaddr_t saddr;
+    uv_write_t write;
+    char buff[CLI_BUFF_SIZE];
     ax_u32 state;
     ax_tcp_cli_cbk_t cbk;
 };
@@ -298,16 +362,99 @@ AX_STATIC_ASSERT(sizeof(ax_tcp_cli_t) >= sizeof(ax_tcp_cli_impl_t), tcp_cli_type
 #define cli_set_connected(x,tf) ((x)->state = ((x)->state & ~((ax_u32)1)) | (tf ? 1 : 0))
 
 static
-void _cli_on_connect(uv_connect_t* strm, int status)
+void _cli_close_conn(uv_handle_t* h)
 {
-    AX_LOG(DBUG, "tcp_cli_connect: %s\n", status ? ax_error_str(status) : "OK");
-    // ax_tcp_cli_impl_t* c = (ax_tcp_cli_impl_t*)(((ax_u8*)strm) - offsetof(ax_tcp_cli_impl_t, conn));
-    ax_tcp_cli_impl_t* c = BASE_PTR(strm, ax_tcp_cli_t, conn);
+    AX_LOG(DBUG, "cli_close: closing (client %p)\n", h);
+}
+
+static
+void _cli_on_alloc(uv_handle_t* h, size_t sugg_size, uv_buf_t* b)
+{
+    uv_connect_t* conn = (uv_connect_t*)h->data;
+    ax_tcp_cli_impl_t* c = BASE_PTR(conn, ax_tcp_cli_impl_t, conn);
+    (void)sugg_size;
+    b->base = c->buff;
+    b->len = CLI_BUFF_SIZE;
+}
+
+static void _cli_start_write(uv_connect_t* conn);
+
+static
+void _cli_on_read(uv_stream_t* strm, ssize_t nread, uv_buf_t const* buf)
+{
+    uv_connect_t* conn = (uv_connect_t*)strm->data;
+    ax_tcp_cli_impl_t* c = BASE_PTR(conn, ax_tcp_cli_impl_t, conn);
+    ax_buf_t ax_buf;
+    int status = (int)nread;
+
+    if (!c->cbk.data_fn || nread < 0) {
+        AX_LOG(DBUG, "tcp_srv_read_err: (client %p) %s\n", strm, ax_error_str(status));
+        uv_close((uv_handle_t*)strm, _cli_close_conn);
+    }
+
+    if (nread > 0) {
+        AX_LOG(INFO, "data recd (client %p):\n--->|\n%.*s|<---\n", strm, (int)nread, buf->base);
+        ax_buf.data = buf->base;
+        ax_buf.len = (ax_i32)buf->len;
+        c->cbk.data_fn(c->cbk.userdata, nread > 0 ? 0 : (int)nread, &ax_buf);
+        if (ax_buf.data == AX_STOP_READ_NO_WRITE) {
+            uv_read_stop(strm);
+            uv_close((uv_handle_t*)strm, _cli_close_conn);
+        } else if (ax_buf.data == AX_STOP_READ_START_WRITE) {
+            uv_read_stop(strm);
+            _cli_start_write(conn);
+        }
+    }
+}
+
+
+static void _cli_write_stat(uv_write_t* w, int status);
+
+static
+void _cli_start_write(uv_connect_t* conn)
+{
+    ax_tcp_cli_impl_t* c = BASE_PTR(conn, ax_tcp_cli_impl_t, conn);
+    ax_buf_t buf = { AX_NULL, 0 };
+    uv_buf_t uv_buf;
+    if (c->cbk.write_data_fn) {
+        c->cbk.write_data_fn(c->cbk.userdata, &buf);
+    }
+    if (buf.data == AX_STOP_WRITE_NO_READ) {
+        uv_close((uv_handle_t*)conn->handle, _cli_close_conn);
+    } else if (buf.data == AX_STOP_WRITE_START_READ) {
+        conn->handle->data = conn;
+        uv_read_start(conn->handle, _cli_on_alloc, _cli_on_read);
+    } else {
+        uv_buf.base = buf.data;
+        uv_buf.len = (ax_sz)buf.len;
+        uv_write(&c->write, conn->handle, &uv_buf, 1, _cli_write_stat);
+    }
+}
+
+static
+void _cli_write_stat(uv_write_t* w, int status)
+{
+    ax_tcp_cli_impl_t* c = BASE_PTR(w, ax_tcp_cli_impl_t, write);
+    if (c->cbk.write_fn) {
+        c->cbk.write_fn(c->cbk.userdata, status);
+    }
+    if (status) {
+        AX_LOG(DBUG, "tcp_cli_write: %s\n", ax_error_str(status));
+        return;
+    }
+    _cli_start_write(&c->conn);
+}
+
+static
+void _cli_on_connect(uv_connect_t* conn, int status)
+{
+    AX_LOG(DBUG, "tcp_cli_connect: %s (client %p)\n", status ? ax_error_str(status) : "OK", conn->handle);
+    ax_tcp_cli_impl_t* c = BASE_PTR(conn, ax_tcp_cli_impl_t, conn);
     if (c->cbk.connect_fn) {
         c->cbk.connect_fn(c->cbk.userdata, status);
     }
     if (status) { return; }
-    
+    _cli_start_write(conn);
 }
 
 static

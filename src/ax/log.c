@@ -9,14 +9,23 @@ For license details see ../../LICENSE
 
 #include "ax/assert.h"
 #include "ax/log.h"
+#include "ax/atomic.h"
 
 #include <stdarg.h>
 
 static FILE* g_log_file = (FILE*)-1;
+static ax_atomic_i32 g_lock = 0;
+static char __cache_align[64];
+static char g_buff[8192];
 
 void ax_set_log_file(FILE* f)
 {
-    g_log_file = f;
+    if (g_log_file != f) {
+        g_log_file = f;
+        if (f != stderr || f != (FILE*)-1) {
+            setvbuf(f, g_buff, _IOFBF, sizeof(g_buff));
+        }
+    }
 }
 
 FILE* ax_get_log_file(void)
@@ -61,7 +70,9 @@ void _ax_print_log(ax_str fmt, ...)
         *p = '\0';
     }
 
+    while (ax_atomic_i32_xchg(&g_lock, 1) == 1) { }
     va_start(args, fmt);
     vfprintf(f, fmt, args);
     va_end(args);
+    ax_atomic_i32_store(&g_lock, 0);
 }

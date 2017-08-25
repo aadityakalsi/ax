@@ -13,6 +13,7 @@ For license details see ../LICENSE
 #include "ax/assert.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #define CHECK(x)   \
   {                \
@@ -23,18 +24,47 @@ For license details see ../LICENSE
     }              \
   }
 
+typedef struct
+{
+    int state;
+} response_t;
+
 static ax_tcp_srv_t server;
+static int replied = 0;
+
+static
+void read_data(void* u, int status, ax_buf_t* buf)
+{
+    buf->data = AX_STOP_READ_START_WRITE;
+    replied = 0;
+}
+
+static
+void write_data(void* u, ax_buf_t* buf)
+{
+    if (!replied) {
+        buf->data = "hello, client!\n";
+        buf->len = (ax_i32) strlen(buf->data);
+        replied = 1;
+    } else {
+        buf->data = AX_STOP_WRITE_NO_READ;
+    }
+}
 
 int main(int argc, ax_const_str argv[])
 {
     ax_const_str ip   = argc > 1 ? argv[1] : "localhost";
     ax_const_str port = argc > 2 ? argv[2] : "8080";
     ax_tcp_srv_cbk_t cbk = {
-        AX_NULL,
-        AX_NULL,
-        AX_NULL,
-        AX_NULL
+            /*void* userdata;*/ AX_NULL,
+            /*void (*listen_fn)(void* userdata);*/ AX_NULL,
+            /*void (*connect_fn)(void* userdata, int status);*/ AX_NULL,
+            /*void (*accept_fn)(void* userdata, ax_sz clientid);*/ AX_NULL,
+            /*void (*data_fn)(void* userdata, int status, ax_buf_t* buf);*/ read_data,
+            /*void (*write_data_fn)(void* userdata, ax_buf_t* buf);*/ write_data,
+            /*void (*write_fn)(void* userdata, int status);*/ AX_NULL
     };
+    ax_set_log_file(fopen("/tmp/tcp_server.log", "wb"));
     CHECK(ax_tcp_srv_init_ip4(&server, ip, atoi(port)));
     ax_tcp_srv_set_cbk(&server, &cbk);
     ax_tcp_srv_start(&server);
