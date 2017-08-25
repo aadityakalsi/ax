@@ -20,6 +20,7 @@ AX_STRUCT_TYPE(ax_buf_t)
     ax_i32 len;
 };
 
+/* set ax_buf_t::data to these constants to change behaviour */
 #define AX_STOP_WRITE_NO_READ    AX_NULL
 #define AX_STOP_WRITE_START_READ ((void*)-1)
 
@@ -27,6 +28,28 @@ AX_STRUCT_TYPE(ax_buf_t)
 #define AX_STOP_READ_START_WRITE ((void*)-1)
 
 /* tcp servers */
+
+/* by default, calls ax_tcp_req_t::get_read_buf first */
+AX_STRUCT_TYPE(ax_tcp_req_t)
+{
+    void* req_ctxt;
+    void (*destroy_req_buffer)(void* req_ctxt, ax_buf_t const* buf);
+    /* modify buf->data to change behaviour. see AX_STOP* above */
+    void (*get_read_buf)(void* req_ctxt, ax_buf_t* buf);
+    /* modify buf->data to change behaviour. see AX_STOP* above */
+    void (*get_write_buf)(void* req_ctxt, ax_buf_t* buf);
+    void (*read_cbk)(void* req_ctxt, int err, ax_buf_t const* buf);
+    void (*write_cbk)(void* req_ctxt, int err);
+};
+
+AX_STRUCT_TYPE(ax_tcp_srv_ctxt_t)
+{
+    void* state;
+    void (*init_srv_ctxt)(void* state);
+    void (*destroy_srv_ctxt)(void* state);
+    void (*init_req)(void* state, ax_tcp_req_t* req);
+    void (*destroy_req)(void* state, ax_tcp_req_t* req);
+};
 
 AX_HIDDEN_TYPE(ax_tcp_srv_t, 1536);
 
