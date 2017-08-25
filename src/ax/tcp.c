@@ -16,6 +16,8 @@ For license details see ../../LICENSE
 
 #include <uv.h>
 
+#include <string.h>
+
 /* tcp common */
 
 AX_HIDDEN_TYPE(sockaddr_t, 64);

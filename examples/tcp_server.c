@@ -51,6 +51,38 @@ void write_data(void* u, ax_buf_t* buf)
     }
 }
 
+#if defined(AX_BUILD_COVERAGE)
+extern void __gcov_flush (void);
+
+#include <signal.h>
+
+void my_handler(int signum)
+{
+    printf("received signal: %d\n", signum);
+    if (signum == SIGUSR1) {
+        __gcov_flush(); /* dump coverage data on receiving SIGUSR1 */
+    }
+}
+
+static
+void signal_setup(void)
+{
+    struct sigaction new_action, old_action;
+    new_action.sa_handler = my_handler;
+    sigemptyset(&new_action.sa_mask);
+    new_action.sa_flags = 0;
+    sigaction(SIGUSR1, NULL, &old_action);
+    //if (old_action.sa_handler != SIG_IGN) {
+        sigaction(SIGUSR1, &new_action, NULL);
+    //}
+}
+#else
+void signal_setup(void)
+{
+}
+#endif
+
+
 int main(int argc, ax_const_str argv[])
 {
     ax_const_str ip   = argc > 1 ? argv[1] : "localhost";
@@ -65,6 +97,7 @@ int main(int argc, ax_const_str argv[])
             /*void (*write_fn)(void* userdata, int status);*/ AX_NULL
     };
     ax_set_log_file(fopen("/tmp/tcp_server.log", "wb"));
+    signal_setup();
     CHECK(ax_tcp_srv_init_ip4(&server, ip, atoi(port)));
     ax_tcp_srv_set_cbk(&server, &cbk);
     ax_tcp_srv_start(&server);

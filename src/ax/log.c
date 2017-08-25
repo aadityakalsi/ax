@@ -23,7 +23,7 @@ void ax_set_log_file(FILE* f)
     if (g_log_file != f) {
         g_log_file = f;
         if (f != stderr || f != (FILE*)-1) {
-            setvbuf(f, g_buff, _IOFBF, sizeof(g_buff));
+            setvbuf(f, g_buff, _IOLBF, sizeof(g_buff));
         }
     }
 }
