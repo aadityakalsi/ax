@@ -9,6 +9,7 @@ For license details see ../../LICENSE
 
 #include "defs.h"
 
+#include "ax/assert.h"
 #include "ax/tcp.h"
 #include "ax/thread.h"
 #include "ax/atomic.h"
@@ -133,7 +134,11 @@ static
 void wait_and_connect(void* a)
 {
     ax_tcp_cli_t* c = &cli;
+    ax_thread_t _a, _b;
     while (ax_atomic_i32_load(&start_connect) != 1) { }
+    _a = ax_thread_self();
+    _b = ax_thread_self();
+    AX_INVARIANT(ax_thread_equal(&_a, &_b));
     ax_tcp_cli_connect(c);
 }
 

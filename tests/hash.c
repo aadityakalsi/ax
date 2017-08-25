@@ -42,6 +42,14 @@ void del_kv(void* k, void* v)
     (void)v;
 }
 
+static ax_sz count = 0;
+
+static
+void count_entries(void const* k, void* v)
+{
+    ++count;
+}
+
 static
 void hashtable(void)
 {
@@ -69,6 +77,12 @@ void hashtable(void)
     testThat(strcmp("foo", (ax_const_str)e->key) == 0);
     testThat(strcmp("1", (ax_const_str)e->value) == 0);
 
+    {
+        count = 0;
+        ax_ht_foreach(&ht, count_entries);
+        testThat(count == ht.size);
+    }
+    
     {
         e = ax_ht_insert(&ht, "aoo", "1", &ins);
         testThat(ins == 1);
@@ -289,13 +303,53 @@ void stringtable(void)
         e = ax_st_find(&st, "goo");
         testThat(e != AX_NULL);
         testThat(strcmp("goo", e->key) == 0);
-        testThat(strcmp("1", e->value) == 0);        
+        testThat(strcmp("1", e->value) == 0);
     }
     {
         e = ax_st_find(&st, "hoo");
         testThat(e != AX_NULL);
         testThat(strcmp("hoo", e->key) == 0);
-        testThat(strcmp("1", e->value) == 0);        
+        testThat(strcmp("1", e->value) == 0);
+        testThat(ax_st_str_capacity(&st, "foo") == 31);
+    }
+
+    {
+        count = 0;
+        ax_st_foreach(&st, (ax_st_visit_fn)count_entries);
+        testThat(count == st.size);
+    }
+
+    {
+        testThat(ax_st_erase(&st, "aoo") == 1);
+        testThat(ax_st_find(&st, "aoo") == AX_NULL);
+    }
+    {
+        testThat(ax_st_erase(&st, "boo") == 1);
+        testThat(ax_st_find(&st, "boo") == AX_NULL);
+    }
+    {
+        testThat(ax_st_erase(&st, "coo") == 1);
+        testThat(ax_st_find(&st, "coo") == AX_NULL);
+    }
+    {
+        testThat(ax_st_erase(&st, "doo") == 1);
+        testThat(ax_st_find(&st, "doo") == AX_NULL);
+    }
+    {
+        testThat(ax_st_erase(&st, "eoo") == 1);
+        testThat(ax_st_find(&st, "eoo") == AX_NULL);
+    }
+    {
+        testThat(ax_st_erase(&st, "foo") == 1);
+        testThat(ax_st_find(&st, "foo") == AX_NULL);
+    }
+    {
+        testThat(ax_st_erase(&st, "goo") == 1);
+        testThat(ax_st_find(&st, "goo") == AX_NULL);
+    }
+    {
+        testThat(ax_st_erase(&st, "hoo") == 1);
+        testThat(ax_st_find(&st, "hoo") == AX_NULL);
     }
 
     testThat(ax_st_destroy(&st) == 0);

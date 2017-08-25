@@ -12,6 +12,7 @@ For license details see ../../LICENSE
 #define AX_MIN_LOG_LEVEL AX_LOG_INFO
 #include "ax/log.h"
 
+static
 void log_stderr(void)
 {
     fprintf(stderr, "\n");
@@ -22,7 +23,27 @@ void log_stderr(void)
     testThat(1);
 }
 
+static
+void log_file(void)
+{
+    ax_const_str fname = "foo.log";
+    FILE* f = fopen(fname, "wb");
+    char line[80];
+    size_t nread;
+    if (!f) return;
+    ax_set_log_file(f);
+    AX_LOG(INFO, "MAGIC\n");
+    ax_set_log_file(stderr);
+    fclose(f);
+    f = fopen(fname, "rb");
+    nread = fread(line, 1, 80, f);
+    fclose(f);
+    testThat(remove(fname) == 0);
+    testThat(strcmp(&line[nread-6], "MAGIC\n") == 0);
+}
+
 setupSuite(log)
 {
     addTest(log_stderr);
+    addTest(log_file);
 }
