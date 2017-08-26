@@ -37,7 +37,7 @@ AX_STRUCT_TYPE(ax_tcp_srv_impl_t)
     uv_tcp_t server;
     sockaddr_t saddr;
     ax_u32 state;
-    ax_tcp_srv_cbk_t cbk;
+    ax_tcp_srv_ctx_t ctx;
 };
 
 #define CLI_BUFF_SIZE 4096
@@ -46,8 +46,11 @@ AX_STRUCT_TYPE(tcp_cli_conn_t)
 {
     uv_tcp_t client;
     ax_tcp_srv_impl_t const* server;
-    char buff[CLI_BUFF_SIZE];
     uv_write_t write;
+    ax_tcp_req_t req;
+    uv_buf_t buf;
+    ax_u32 is_first : 1;
+    ax_u32 is_read : 1;
 };
 
 #define srv_listening(x)        ((x)->state & 1)
@@ -80,8 +83,9 @@ tcp_cli_conn_t* _create_tcp_client(void)
     ax_pool_t* p = _get_client_conn_pool();
     tcp_cli_conn_t* mem;
     while (ax_atomic_i32_xchg(&CLIENT_POOL_LOCK, 1) == 1) { }
-    mem = p ? ax_pool_alloc(p) : AX_NULL;
+    mem = p ? (tcp_cli_conn_t*)ax_pool_alloc(p) : AX_NULL;
     ax_atomic_i32_store(&CLIENT_POOL_LOCK, 0);
+    mem ? (mem->is_read = 1, 0) : 0;
     return mem;
 }
 
@@ -94,62 +98,112 @@ void _destroy_tcp_client(tcp_cli_conn_t* t)
     ax_atomic_i32_store(&CLIENT_POOL_LOCK, 0);
 }
 
+/* server api */
+
 static
-void _srv_on_alloc(uv_handle_t *h, size_t sugg_size, uv_buf_t *b)
+void _srv_on_alloc(uv_handle_t* h, size_t sugg_sz, uv_buf_t* b)
 {
-    tcp_cli_conn_t* c = (tcp_cli_conn_t*)h;
-    (void)sugg_size;
-    b->base = c->buff;
-    b->len = CLI_BUFF_SIZE;
+    tcp_cli_conn_t* conn = BASE_PTR(h, tcp_cli_conn_t, client);
+    *b = conn->buf;
+}
+
+static
+void _srv_on_read(uv_stream_t* strm, ssize_t nread, uv_buf_t const* buf);
+
+static
+void _srv_start_write(uv_stream_t* strm);
+
+static
+void _srv_on_close(uv_handle_t* h);
+
+static
+void _srv_set_buf(tcp_cli_conn_t* conn)
+{
+    ax_buf_t buf;
+    uv_stream_t* strm = (uv_stream_t*)&conn->client;
+    uv_handle_t* h = (uv_handle_t*)strm;
+    if (conn->is_read) {
+        AX_ASSERT(conn->req.get_read_buf);
+        conn->req.get_read_buf(conn->req.req_ctx, &buf);
+        if (buf.data == AX_STOP_READ_NO_WRITE) {
+            if (!conn->is_first) {
+                uv_read_stop(strm);
+            }
+            uv_close(h, _srv_on_close);
+        } else if (buf.data == AX_STOP_READ_START_WRITE) {
+            if (!conn->is_first) {
+                uv_read_stop(strm);
+            }
+            conn->is_first = 0;
+            conn->is_read = 0;
+            _srv_set_buf(conn);
+            AX_ASSERT(!uv_is_closing(h));
+            _srv_start_write(strm);
+        } else {
+            conn->buf.base = buf.data;
+            conn->buf.len = buf.len;
+            if (conn->is_first) {
+                uv_read_start(strm, _srv_on_alloc, _srv_on_read);
+            }
+            conn->is_first = 0;
+        }
+    } else {
+        AX_ASSERT(conn->req.get_write_buf);
+        conn->req.get_write_buf(conn->req.req_ctx, &buf);
+        if (buf.data == AX_STOP_WRITE_NO_READ) {
+            uv_close(h, _srv_on_close);
+        } else if (buf.data == AX_STOP_WRITE_START_READ) {
+            conn->is_first = 0;
+            conn->is_read = 1;
+            _srv_set_buf(conn);
+            AX_ASSERT(!uv_is_closing(h));
+            uv_read_start(strm, _srv_on_alloc, _srv_on_read);
+        } else {
+            conn->is_first = 0;
+            conn->buf.base = buf.data;
+            conn->buf.len = buf.len;
+        }
+    }
 }
 
 static
 void _srv_on_close(uv_handle_t* h)
 {
+    tcp_cli_conn_t* conn = BASE_PTR(h, tcp_cli_conn_t, client);
+    ax_tcp_srv_impl_t const* s = conn->server;
     AX_LOG(DBUG, "tcp_srv_close_conn: (client %p)\n", h);
+    AX_ASSERT(s->ctx.destroy_req);
+    s->ctx.destroy_req(s->ctx.state, &conn->req);
     _destroy_tcp_client((tcp_cli_conn_t*)h);
 }
 
-static void _srv_start_write(uv_stream_t* strm);
 
 static
 void _srv_write_stat(uv_write_t* w, int status)
 {
     tcp_cli_conn_t* conn = BASE_PTR(w, tcp_cli_conn_t, write);
-    ax_tcp_srv_impl_t const* s = conn->server;
-    if (s->cbk.write_fn) {
-        s->cbk.write_fn(s->cbk.userdata, status);
-    }
+    ax_buf_t buf = { conn->buf.base, conn->buf.len };
+    AX_ASSERT(conn->req.free_write_buf);
+    conn->req.free_write_buf(conn->req.req_ctx, &buf);
     if (status) {
         AX_LOG(DBUG, "tcp_srv_write: %s\n", ax_error_str(status));
         return;
     }
-    _srv_start_write((uv_stream_t*)&conn->client);
+    AX_ASSERT(conn->req.write_cbk);
+    conn->req.write_cbk(conn->req.req_ctx, status);
+
+    _srv_set_buf(conn);
+    if (!conn->is_read && !uv_is_closing((uv_handle_t const*)&conn->client)) {
+        _srv_start_write((uv_stream_t*)&conn->client);
+    }
 }
 
-static void _srv_on_read(uv_stream_t* strm, ssize_t nread, uv_buf_t const* buf);
 
 static
 void _srv_start_write(uv_stream_t* strm)
 {
     tcp_cli_conn_t* conn = BASE_PTR(strm, tcp_cli_conn_t, client);
-    ax_tcp_srv_impl_t const* s = conn->server;
-    ax_buf_t buf = { AX_STOP_WRITE_NO_READ, 0 };
-    uv_buf_t uv_buf;
-
-    if (s->cbk.write_data_fn) {
-        s->cbk.write_data_fn(s->cbk.userdata, &buf);
-    }
-
-    if (buf.data == AX_STOP_WRITE_NO_READ) {
-        uv_close((uv_handle_t*)strm, strm->close_cb);
-    } else if (buf.data == AX_STOP_WRITE_START_READ) {
-        uv_read_start(strm, _srv_on_alloc, _srv_on_read);
-    } else {
-        uv_buf.base = buf.data;
-        uv_buf.len = (ax_sz)buf.len;
-        uv_write(&conn->write, strm, &uv_buf, 1, _srv_write_stat);
-    }
+    uv_write(&conn->write, strm, &conn->buf, 1, _srv_write_stat);
 }
 
 static
@@ -159,26 +213,29 @@ void _srv_on_read(uv_stream_t* strm, ssize_t nread, uv_buf_t const* buf)
     ax_tcp_srv_impl_t const* s = conn->server;
     ax_buf_t ax_buf;
     int status = nread > 0 ? 0 : (int)nread;
+    int next;
 
-    if (!s->cbk.data_fn || nread < 0) {
+    ax_buf.data = buf->base;
+    ax_buf.len = (ax_i32)buf->len;
+    if (nread < 0) {
         AX_LOG(DBUG, "tcp_srv_read_err: (client %p) %s\n", strm, status == 0 ? "OK" : ax_error_str(status));
-        uv_close((uv_handle_t*)strm, _srv_on_close);
-    }
-
-    if (nread > 0) {
+        next = -1;
+    } else if (nread > 0) {
         AX_LOG(INFO, "data recd (client %p):\n--->|\n%.*s|<---\n", strm, (int)nread, buf->base);
-        ax_buf.data = buf->base;
-        ax_buf.len = (ax_i32)buf->len;
-        if (s->cbk.data_fn) {
-            s->cbk.data_fn(s->cbk.userdata, nread > 0 ? 0 : (int) nread, &ax_buf);
-        }
-        if (ax_buf.data == AX_STOP_READ_NO_WRITE) {
-            uv_read_stop(strm);
-            uv_close((uv_handle_t*)strm, _srv_on_close);
-        } else if (ax_buf.data == AX_STOP_READ_START_WRITE) {
-            uv_read_stop(strm);
-            _srv_start_write(strm);
-        }
+        AX_ASSERT(conn->req.read_cbk);
+        conn->req.read_cbk(conn->req.req_ctx, status, &ax_buf);
+        next = 1;
+    } else {
+        next = 0;
+    }
+    
+_srv_on_read_done:
+    AX_ASSERT(conn->req.free_read_buf);
+    conn->req.free_read_buf(conn->req.req_ctx, &ax_buf);
+    if (next == -1) {
+        uv_close((uv_handle_t*)strm, _srv_on_close);
+    } else if (next == 1) {
+        _srv_set_buf(conn);
     }
 }
 
@@ -189,9 +246,6 @@ void _srv_on_connect(uv_stream_t* strm, int status)
     ax_tcp_srv_impl_t* s = BASE_PTR(strm, ax_tcp_srv_impl_t, server);
     tcp_cli_conn_t* conn;
 
-    if (s->cbk.connect_fn) {
-        s->cbk.connect_fn(s->cbk.userdata, status);
-    }
     if (status) { return; }
 
     conn = _create_tcp_client();
@@ -209,11 +263,13 @@ void _srv_on_connect(uv_stream_t* strm, int status)
         return;
     }
     AX_LOG(DBUG, "tcp_srv_open_conn: (client %p)\n", conn);
-    if (s->cbk.accept_fn) {
-        s->cbk.accept_fn(s->cbk.userdata, (ax_sz)conn);
-    }
+
+    AX_ASSERT(s->ctx.init_req);
+    s->ctx.init_req(s->ctx.state, &conn->req);
+
     conn->client.close_cb = _srv_on_close;
-    uv_read_start((uv_stream_t *) (&conn->client), _srv_on_alloc, _srv_on_read);
+    conn->is_first = 1;
+    _srv_set_buf(conn);
 }
 
 static
@@ -225,9 +281,6 @@ int _srv_ensure_listening(ax_tcp_srv_impl_t* s)
         AX_LOG(DBUG, "tcp_srv_listen: %s\n", ax_error_str(ret));
     } else {
         srv_set_listening(s, 1);
-        if (s->cbk.listen_fn) {
-            s->cbk.listen_fn(s->cbk.userdata);
-        }
     }
     return ret;
 }
@@ -249,7 +302,7 @@ int ax_tcp_srv_init_ip4(ax_tcp_srv_t* srv, ax_const_str addr, int port)
 ax_server_init_done:
     s->state = 0;
     srv_set_listening(s, 0);
-    memset(&s->cbk, 0, sizeof(ax_tcp_srv_cbk_t));
+    memset(&s->ctx, 0, sizeof(ax_tcp_srv_ctx_t));
     return ret;
 }
 
@@ -261,9 +314,9 @@ int ax_tcp_srv_destroy(ax_tcp_srv_t* srv)
     return ret;
 }
 
-void ax_tcp_srv_set_cbk(ax_tcp_srv_t* srv, ax_tcp_srv_cbk_t const* cbk)
+void ax_tcp_srv_set_ctx(ax_tcp_srv_t* srv, ax_tcp_srv_ctx_t const* ctx)
 {
-    ((ax_tcp_srv_impl_t*)srv)->cbk = *cbk;
+    ((ax_tcp_srv_impl_t*)srv)->ctx = *ctx;
 }
 
 int ax_tcp_srv_start(ax_tcp_srv_t* srv)
@@ -272,6 +325,8 @@ int ax_tcp_srv_start(ax_tcp_srv_t* srv)
     int ret;
     ret = _srv_ensure_listening(s);
     if (ret) return ret;
+    AX_ASSERT(s->ctx.on_start);
+    s->ctx.on_start(s->ctx.state);
     ret = uv_run(&s->loop, UV_RUN_DEFAULT);
     if (ret) {
         AX_LOG(INFO, "tcp_srv_run: %s\n", ax_error_str(ret));

@@ -32,37 +32,27 @@ AX_STRUCT_TYPE(ax_buf_t)
 /* by default, calls ax_tcp_req_t::get_read_buf first */
 AX_STRUCT_TYPE(ax_tcp_req_t)
 {
-    void* req_ctxt;
-    void (*destroy_req_buffer)(void* req_ctxt, ax_buf_t const* buf);
+    void* req_ctx;
     /* modify buf->data to change behaviour. see AX_STOP* above */
-    void (*get_read_buf)(void* req_ctxt, ax_buf_t* buf);
+    void (*get_read_buf)(void* req_ctx, ax_buf_t* buf);
+    void (*free_read_buf)(void* req_ctx, ax_buf_t const* buf);
     /* modify buf->data to change behaviour. see AX_STOP* above */
-    void (*get_write_buf)(void* req_ctxt, ax_buf_t* buf);
-    void (*read_cbk)(void* req_ctxt, int err, ax_buf_t const* buf);
-    void (*write_cbk)(void* req_ctxt, int err);
+    void (*get_write_buf)(void* req_ctx, ax_buf_t* buf);
+    void (*free_write_buf)(void* req_ctx, ax_buf_t const* buf);
+    /* when operation is performed */
+    void (*read_cbk)(void* req_ctx, int err, ax_buf_t const* buf);
+    void (*write_cbk)(void* req_ctx, int err);
 };
 
-AX_STRUCT_TYPE(ax_tcp_srv_ctxt_t)
+AX_STRUCT_TYPE(ax_tcp_srv_ctx_t)
 {
     void* state;
-    void (*init_srv_ctxt)(void* state);
-    void (*destroy_srv_ctxt)(void* state);
+    void (*on_start)(void* state);
     void (*init_req)(void* state, ax_tcp_req_t* req);
     void (*destroy_req)(void* state, ax_tcp_req_t* req);
 };
 
 AX_HIDDEN_TYPE(ax_tcp_srv_t, 1536);
-
-AX_STRUCT_TYPE(ax_tcp_srv_cbk_t)
-{
-    void* userdata;
-    void (*listen_fn)(void* userdata);
-    void (*connect_fn)(void* userdata, int status);
-    void (*accept_fn)(void* userdata, ax_sz clientid);
-    void (*data_fn)(void* userdata, int status, ax_buf_t* buf);
-    void (*write_data_fn)(void* userdata, ax_buf_t* buf);
-    void (*write_fn)(void* userdata, int status);
-};
 
 AX_API
 int ax_tcp_srv_init_ip4(ax_tcp_srv_t* srv, ax_const_str addr, int port);
@@ -71,7 +61,7 @@ AX_API
 int ax_tcp_srv_destroy(ax_tcp_srv_t* srv);
 
 AX_API
-void ax_tcp_srv_set_cbk(ax_tcp_srv_t* srv, ax_tcp_srv_cbk_t const* cbk);
+void ax_tcp_srv_set_ctx(ax_tcp_srv_t* srv, ax_tcp_srv_ctx_t const* ctx);
 
 AX_API
 int ax_tcp_srv_start(ax_tcp_srv_t* srv);

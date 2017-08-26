@@ -6,6 +6,7 @@ cov_dir="_build/coverage"
 cov_file="_build/cov.info"
 
 cd $root
+$root/clean.sh
 lcov --base-directory $obj_dir --directory $obj_dir --zerocounters -q
 env CFLAGS='-DAX_BUILD_COVERAGE -ftest-coverage -fprofile-arcs --coverage' ./build.sh
 lcov --base-directory $obj_dir --directory $obj_dir -c -o $cov_file
