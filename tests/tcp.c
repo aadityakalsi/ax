@@ -115,7 +115,7 @@ void server_ctx_get_buf(void* c, ax_buf_t* buf)
             break;
         case 2:
             buf->data = "Hello, client!\n";
-            buf->len = strlen(buf->data);
+            buf->len = (ax_i32)strlen(buf->data);
             break;
         case 3:
             buf->data = AX_STOP_WRITE_NO_READ;

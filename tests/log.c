@@ -41,7 +41,7 @@ void log_file(void)
     nread = fread(line, 1, 80, f);
     fclose(f);
     testThat(remove(fname) == 0);
-    testThat(strcmp(&line[nread-6], "MAGIC\n") == 0);
+    testThat(strncmp(&line[nread-6], "MAGIC\n", 6) == 0);
 }
 
 setupSuite(log)

@@ -25,9 +25,8 @@ ax_arena_page_t* create_arena_page(ax_sz pg_sz, ax_sz align)
     hdr_sz = (hdr_sz + align - 1) & ~(align - 1);
     pg = (ax_arena_page_t*)malloc(pg_sz + hdr_sz + align);
     shift = (((ax_sz)pg) & (align - 1));
-    if (shift) {
-        pg = (ax_arena_page_t*)((ax_u8*)(pg) + shift);
-    }
+    shift = shift ? shift : align;
+    pg = (ax_arena_page_t*)((ax_u8*)(pg) + align - shift);
     if (pg) {
         pg->curr = ((ax_u8*)pg) + hdr_sz;
         pg->end = pg->curr + pg_sz;
@@ -38,9 +37,9 @@ ax_arena_page_t* create_arena_page(ax_sz pg_sz, ax_sz align)
 }
 
 static
-void destroy_arena_page(ax_arena_page_t* pg)
+void destroy_arena_page(ax_arena_page_t* pg, ax_sz align)
 {
-    free(((ax_u8*)pg) - pg->shift);
+    free(((ax_u8*)pg) + pg->shift - align);
 }
 
 int ax_arena_init(ax_arena_t* ar, ax_sz min_pg_sz, ax_sz align)
@@ -90,7 +89,7 @@ int ax_arena_destroy(ax_arena_t* ar)
     ax_arena_page_t* pg = ar->curr;
     while (pg != AX_NULL) {
         ax_arena_page_t* prev = pg->prev;
-        destroy_arena_page(pg);
+        destroy_arena_page(pg, ar->align);
         pg = prev;
     }
     ar->curr = AX_NULL;

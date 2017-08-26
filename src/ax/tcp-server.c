@@ -228,8 +228,7 @@ void _srv_on_read(uv_stream_t* strm, ssize_t nread, uv_buf_t const* buf)
     } else {
         next = 0;
     }
-    
-_srv_on_read_done:
+
     AX_ASSERT(conn->req.free_read_buf);
     conn->req.free_read_buf(conn->req.req_ctx, &ax_buf);
     if (next == -1) {

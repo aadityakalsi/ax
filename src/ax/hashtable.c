@@ -52,7 +52,7 @@ int rehash(ax_ht_t* ht)
     ax_sz idx;
     
     div = (div - (ax_sz)div) > 0 ? ((ax_sz)div + 1) : div;
-    newcap = next_pow_2((ax_sz)div) - 1;
+    newcap = (ax_sz)next_pow_2((ax_sz)div) - 1;
     newcap = newcap < 7 ? 7 : newcap;
     if (newcap < ht->cap) {
         return AX_ENOMEM;

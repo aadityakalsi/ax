@@ -47,7 +47,7 @@ void req_get_buf(void* c, ax_buf_t* buf)
     } else if (*p == 2) {
         ++(*p);
         buf->data = "Goodbye client!\n";
-        buf->len = strlen(buf->data);
+        buf->len = (ax_i32)strlen(buf->data);
     } else {
         AX_ASSERT(*p == 3);
         buf->data = AX_STOP_WRITE_NO_READ;
@@ -138,7 +138,7 @@ int main(int argc, ax_const_str argv[])
         srv_init_req,
         srv_destroy_req
     };
-    ax_set_log_file(fopen("/tmp/tcp_server.log", "wb"));
+    ax_set_log_file(fopen("./tcp_server.log", "wb"));
     signal_setup();
     CHECK(ax_tcp_srv_init_ip4(&server, ip, atoi(port)));
     ax_tcp_srv_set_ctx(&server, &ctx);
