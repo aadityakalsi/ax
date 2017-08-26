@@ -32,7 +32,7 @@ For license details see ../../LICENSE
 #define __AX_STR(x) __AX_STR_X(x)
 
 #define AX_LOG(lvl, fmt, ...)                                                   \
-  if (AX_LOG_##lvl >= AX_MIN_LOG_LEVEL) {                                       \
+  if (AX_LOG_##lvl >= AX_MIN_LOG_LEVEL && (ax_get_log_file() != 0)) {           \
       char __xx_buf[] = "["#lvl"] (" __FILE__ ":" __AX_STR(__LINE__) ") " fmt;  \
       _ax_print_log(__xx_buf, ## __VA_ARGS__);                                  \
   }                                                                             \

@@ -11,6 +11,7 @@ For license details see ../../LICENSE
 #include "ax/log.h"
 #include "ax/atomic.h"
 
+#include <string.h>
 #include <stdarg.h>
 
 static FILE* g_log_file = (FILE*)-1;
@@ -22,7 +23,7 @@ void ax_set_log_file(FILE* f)
 {
     if (g_log_file != f) {
         g_log_file = f;
-        if (f != stderr || f != (FILE*)-1) {
+        if (f != stderr && f != (FILE*)-1 && f != 0) {
             setvbuf(f, g_buff, _IOLBF, sizeof(g_buff));
         }
     }
@@ -43,32 +44,16 @@ void _ax_print_log(ax_str fmt, ...)
 
     if (!f) return;
 
-    while (*p++ != '(') {
-        AX_ASSERT(*p != '\0');
-    }
-
-    // start past the '('
-    e = p;
-    last = p;
-
-    while (*e != ')') {
-        AX_ASSERT(*e != '\0');
-        if (*e == '/'
+    p = strchr(fmt, '(');
+    e = strchr(p+1, ')');
+    *e = '\0';
+    last = strrchr(p+1, '/');
 #ifdef _WIN32
-         || *e == '\\'
+    last = last ? last : strrchr(p+1,'\\');
 #endif
-           ) {
-            last = e;
-        }
-        ++e;
-    }
-
-    if (last != p) {
-        // found a '/' before ')'
-        ++last; // move past filesep
-        while (*last != '\0') { *p++ = *last++; }
-        *p = '\0';
-    }
+    *e = ')';
+    AX_ASSERT(last);
+    strcpy(p+1, last+1);
 
     while (ax_atomic_i32_xchg(&g_lock, 1) == 1) { }
     va_start(args, fmt);

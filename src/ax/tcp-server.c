@@ -16,7 +16,7 @@ For license details see ../../LICENSE
  * \date Aug 23, 2017
  */
 
-#define AX_MIN_LOG_LEVEL AX_LOG_INFO
+#define AX_MIN_LOG_LEVEL AX_LOG_DBUG
 #include "ax/tcp.h"
 #include "ax/assert.h"
 #include "ax/log.h"
@@ -116,7 +116,7 @@ void _srv_start_write(uv_stream_t* strm);
 static
 void _srv_on_close(uv_handle_t* h);
 
-static
+inline static
 void _srv_set_buf(tcp_cli_conn_t* conn)
 {
     ax_buf_t buf;
