@@ -9,7 +9,6 @@ For license details see ../../LICENSE
 
 #include "ax/tcp-common.h"
 #include "ax/assert.h"
-#define AX_MIN_LOG_LEVEL AX_LOG_INFO
 #include "ax/log.h"
 
 #include <string.h>
