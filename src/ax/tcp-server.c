@@ -37,10 +37,8 @@ AX_STRUCT_TYPE(ax_tcp_srv_impl_t)
     uv_tcp_t server;
     sockaddr_t saddr;
     ax_u32 state;
-    ax_tcp_srv_ctx_t ctx;
+    ax_tcp_ctx_t ctx;
 };
-
-#define CLI_BUFF_SIZE 4096
 
 AX_STRUCT_TYPE(tcp_cli_conn_t)
 {
@@ -119,7 +117,7 @@ void _srv_on_close(uv_handle_t* h);
 inline static
 void _srv_set_buf(tcp_cli_conn_t* conn)
 {
-    ax_buf_t buf;
+    ax_buf_t buf = {0, 0};
     uv_stream_t* strm = (uv_stream_t*)&conn->client;
     uv_handle_t* h = (uv_handle_t*)strm;
     if (conn->is_read) {
@@ -177,7 +175,6 @@ void _srv_on_close(uv_handle_t* h)
     _destroy_tcp_client((tcp_cli_conn_t*)h);
 }
 
-
 static
 void _srv_write_stat(uv_write_t* w, int status)
 {
@@ -198,7 +195,6 @@ void _srv_write_stat(uv_write_t* w, int status)
     }
 }
 
-
 static
 void _srv_start_write(uv_stream_t* strm)
 {
@@ -216,7 +212,7 @@ void _srv_on_read(uv_stream_t* strm, ssize_t nread, uv_buf_t const* buf)
     int next;
 
     ax_buf.data = buf->base;
-    ax_buf.len = (ax_i32)buf->len;
+    ax_buf.len = (ax_i32)nread;
     if (nread < 0) {
         AX_LOG(DBUG, "tcp_srv_read_err: (client %p) %s\n", strm, status == 0 ? "OK" : ax_error_str(status));
         next = -1;
@@ -301,7 +297,7 @@ int ax_tcp_srv_init_ip4(ax_tcp_srv_t* srv, ax_const_str addr, int port)
 ax_server_init_done:
     s->state = 0;
     srv_set_listening(s, 0);
-    memset(&s->ctx, 0, sizeof(ax_tcp_srv_ctx_t));
+    memset(&s->ctx, 0, sizeof(ax_tcp_ctx_t));
     return ret;
 }
 
@@ -313,7 +309,7 @@ int ax_tcp_srv_destroy(ax_tcp_srv_t* srv)
     return ret;
 }
 
-void ax_tcp_srv_set_ctx(ax_tcp_srv_t* srv, ax_tcp_srv_ctx_t const* ctx)
+void ax_tcp_srv_set_ctx(ax_tcp_srv_t* srv, ax_tcp_ctx_t const* ctx)
 {
     ((ax_tcp_srv_impl_t*)srv)->ctx = *ctx;
 }

@@ -31,10 +31,13 @@ For license details see ../../LICENSE
 #define __AX_STR_X(x) #x
 #define __AX_STR(x) __AX_STR_X(x)
 
+#define __AX_LOG_LINE(lvl, fmt) \
+  "["#lvl"] (" __FILE__ ":" __AX_STR(__LINE__) ") " fmt
+
 #define AX_LOG(lvl, fmt, ...)                                                   \
   if (AX_LOG_##lvl >= AX_MIN_LOG_LEVEL && (ax_get_log_file() != 0)) {           \
-      char __xx_buf[] = "["#lvl"] (" __FILE__ ":" __AX_STR(__LINE__) ") " fmt;  \
-      _ax_print_log(__xx_buf, ## __VA_ARGS__);                                  \
+      char __xx_buf[] = __AX_LOG_LINE(lvl, fmt);                                \
+      _ax_print_log(sizeof(__xx_buf)-1, __xx_buf, ## __VA_ARGS__);              \
   }                                                                             \
   do { } while (0)
 
@@ -45,6 +48,6 @@ AX_API
 FILE* ax_get_log_file();
 
 AX_API
-void _ax_print_log(ax_str fmt, ...);
+void _ax_print_log(ax_sz str_len, ax_str fmt, ...);
 
 #endif/*_AX_LOG_H_*/

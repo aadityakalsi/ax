@@ -132,7 +132,7 @@ int main(int argc, ax_const_str argv[])
 {
     ax_const_str ip   = argc > 1 ? argv[1] : "localhost";
     ax_const_str port = argc > 2 ? argv[2] : "8080";
-    ax_tcp_srv_ctx_t ctx = {
+    ax_tcp_ctx_t ctx = {
         AX_NULL,
         srv_on_start,
         srv_init_req,

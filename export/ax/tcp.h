@@ -44,7 +44,7 @@ AX_STRUCT_TYPE(ax_tcp_req_t)
     void (*write_cbk)(void* req_ctx, int err);
 };
 
-AX_STRUCT_TYPE(ax_tcp_srv_ctx_t)
+AX_STRUCT_TYPE(ax_tcp_ctx_t)
 {
     void* state;
     void (*on_start)(void* state);
@@ -61,7 +61,7 @@ AX_API
 int ax_tcp_srv_destroy(ax_tcp_srv_t* srv);
 
 AX_API
-void ax_tcp_srv_set_ctx(ax_tcp_srv_t* srv, ax_tcp_srv_ctx_t const* ctx);
+void ax_tcp_srv_set_ctx(ax_tcp_srv_t* srv, ax_tcp_ctx_t const* ctx);
 
 AX_API
 int ax_tcp_srv_start(ax_tcp_srv_t* srv);
@@ -71,16 +71,7 @@ void ax_tcp_srv_stop(ax_tcp_srv_t* srv);
 
 /* tcp clients */
 
-AX_HIDDEN_TYPE(ax_tcp_cli_t, 5888);
-
-AX_STRUCT_TYPE(ax_tcp_cli_cbk_t)
-{
-    void* userdata;
-    void (*connect_fn)(void* userdata, int status);
-    void (*data_fn)(void* userdata, int status, ax_buf_t* buf);
-    void (*write_data_fn)(void* userdata, ax_buf_t*);
-    void (*write_fn)(void* userdata, int status);
-};
+AX_HIDDEN_TYPE(ax_tcp_cli_t, 1792);
 
 AX_API
 int ax_tcp_cli_init_ip4(ax_tcp_cli_t* cli, ax_const_str addr, int port);
@@ -89,7 +80,7 @@ AX_API
 int ax_tcp_cli_destroy(ax_tcp_cli_t* cli);
 
 AX_API
-void ax_tcp_cli_set_cbk(ax_tcp_cli_t* cli, ax_tcp_cli_cbk_t const* cbk);
+void ax_tcp_cli_set_ctx(ax_tcp_cli_t* cli, ax_tcp_ctx_t const* ctx);
 
 AX_API
 int ax_tcp_cli_connect(ax_tcp_cli_t* cli);
