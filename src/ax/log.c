@@ -16,6 +16,7 @@ For license details see ../../LICENSE
 
 static FILE* g_log_file = (FILE*)-1;
 static ax_atomic_i32 g_lock = 0;
+static int flush = 0;
 static char __cache_align[64];
 static char g_buff[8192];
 
@@ -74,5 +75,9 @@ void _ax_print_log(ax_sz str_len, ax_str fmt, ...)
     va_start(args, fmt);
     vfprintf(f, fmt, args);
     va_end(args);
+    if (++flush == 32) {
+        fflush(f);
+        flush = 0;
+    }
     ax_atomic_i32_store(&g_lock, 0);
 }
