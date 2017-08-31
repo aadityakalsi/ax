@@ -64,6 +64,11 @@ AX_API
 void ax_tcp_srv_set_ctx(ax_tcp_srv_t* srv, ax_tcp_ctx_t const* ctx);
 
 AX_API
+void ax_tcp_srv_write(ax_tcp_srv_t* srv, ax_tcp_req_t* req, ax_buf_t const* buf,
+                      void (*free_write_buf)(void* req_ctx, ax_buf_t const* buf),
+                      void (*write_cbk)(void* req_ctx, int err));
+
+AX_API
 int ax_tcp_srv_start(ax_tcp_srv_t* srv);
 
 AX_API

@@ -183,7 +183,6 @@ void _srv_write_stat(uv_write_t* w, int status)
     conn->req.free_write_buf(conn->req.req_ctx, &buf);
     if (status) {
         AX_LOG(DBUG, "tcp_srv_write: %s\n", ax_error_str(status));
-        return;
     }
     AX_ASSERT(conn->req.write_cbk);
     conn->req.write_cbk(conn->req.req_ctx, status);
@@ -311,6 +310,51 @@ int ax_tcp_srv_destroy(ax_tcp_srv_t* srv)
 void ax_tcp_srv_set_ctx(ax_tcp_srv_t* srv, ax_tcp_ctx_t const* ctx)
 {
     ((ax_tcp_srv_impl_t*)srv)->ctx = *ctx;
+}
+
+typedef struct outband_write_s outband_write_t;
+struct outband_write_s
+{
+    uv_write_t write;
+    uv_buf_t buf;
+    ax_tcp_req_t* req;
+    void (*free_write_buf)(void* req_ctx, ax_buf_t const* buf);
+    void (*write_cbk)(void* req_ctx, int err);
+};
+
+AX_STATIC_ASSERT(sizeof(outband_write_t) <= sizeof(tcp_cli_conn_t), outband_t_too_large);
+
+static
+void outband_write_cbk(uv_write_t* write, int err)
+{
+    outband_write_t* wreq = BASE_PTR(write, outband_write_t, write);
+    ax_buf_t buf;
+    if (err) {
+        AX_LOG(DBUG, "tcp_srv_write: %s\n", ax_error_str(err));
+    }
+    buf.data = wreq->buf.base;
+    buf.len = (int)wreq->buf.len;
+    wreq->free_write_buf(wreq->req->req_ctx, &buf);
+    wreq->write_cbk(wreq->req->req_ctx, err);
+    _destroy_tcp_client((tcp_cli_conn_t*)wreq);
+}
+
+void ax_tcp_srv_write(ax_tcp_srv_t* srv, ax_tcp_req_t* req, ax_buf_t const* buf,
+                      void (*free_write_buf)(void* req_ctx, ax_buf_t const* buf),
+                      void (*write_cbk)(void* req_ctx, int err))
+{
+    ax_tcp_srv_impl_t* s = (ax_tcp_srv_impl_t*)srv;
+    tcp_cli_conn_t* cli = BASE_PTR(req, tcp_cli_conn_t, req);
+    outband_write_t* wreq;
+    AX_ASSERT(srv_listening(s));
+    wreq = (outband_write_t*)_create_tcp_client();
+    AX_ASSERT(wreq);
+    wreq->req = req;
+    wreq->buf.base = buf->data;
+    wreq->buf.len = (size_t)buf->len;
+    wreq->free_write_buf = free_write_buf;
+    wreq->write_cbk = write_cbk;
+    uv_write(&wreq->write, (uv_stream_t*)&cli->client, &wreq->buf, 1, outband_write_cbk);
 }
 
 int ax_tcp_srv_start(ax_tcp_srv_t* srv)

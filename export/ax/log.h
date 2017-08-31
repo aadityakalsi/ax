@@ -22,7 +22,7 @@ For license details see ../../LICENSE
 
 #ifndef AX_MIN_LOG_LEVEL
 #  ifndef NDEBUG
-#    define AX_MIN_LOG_LEVEL AX_LOG_DBG
+#    define AX_MIN_LOG_LEVEL AX_LOG_DBUG
 #  else
 #    define AX_MIN_LOG_LEVEL AX_LOG_WARN
 #  endif

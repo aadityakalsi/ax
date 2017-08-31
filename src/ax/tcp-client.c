@@ -115,7 +115,6 @@ void _cli_write_stat(uv_write_t* w, int status)
     ax_tcp_cli_impl_t* c = BASE_PTR(w, ax_tcp_cli_impl_t, write);
     if (status) {
         AX_LOG(DBUG, "tcp_cli_write: %s\n", ax_error_str(status));
-        return;
     }
     AX_ASSERT(c->req.write_cbk);
     c->req.write_cbk(c->req.req_ctx, status);
