@@ -81,7 +81,7 @@ static
 chat_msg_t* create_msg(ax_const_str usr, ax_buf_t const* b)
 {
     chat_msg_t* m = (chat_msg_t*)ax_pool_alloc(&chat.msgs);
-    usr = usr ? usr : "** system-msg **";
+    usr = usr ? usr : "**";
     AX_ASSERT(m);
     strcpy(m->usr, usr);
     sprintf(m->msg, "%s: %.*s", usr, b->len, b->data);
@@ -102,17 +102,23 @@ void msg_post_status(void* req_ctx, int err)
 {
 }
 
+static
+void post_msg_to_user(chat_user_t* u, chat_msg_t* m)
+{
+    ax_buf_t buf = { m->msg, m->size };
+    copy_msg(m);
+    ax_tcp_srv_write(&chat_srv, u->req, &buf, after_msg_post, msg_post_status);
+}
+
 /* maybe use a &m->msg -> m map and clear entry when all refs are gone */
 static
 void post_msg_to_users(chat_msg_t* m)
 {
     chat_user_t* end = &chat.user;
     chat_user_t* beg = end->next;
-    ax_buf_t buf = { m->msg, m->size };
     while (beg != end) {
         if (strcmp(beg->name, m->usr) != 0) {
-            copy_msg(m);
-            ax_tcp_srv_write(&chat_srv, beg->req, &buf, after_msg_post, msg_post_status);
+            post_msg_to_user(beg, m);
         }
         beg = beg->next;
     }
@@ -180,6 +186,7 @@ void srv_init_req(void* p, ax_tcp_req_t* req)
     chat_srv_t* s = (chat_srv_t*)p;
     chat_user_t* u = (chat_user_t*)malloc(sizeof(chat_user_t));
     char buff[MSG_SIZE];
+    char welcome[MSG_SIZE];
     ax_buf_t b;
     if (!u) return;
     u->prev = s->user.prev;
@@ -198,8 +205,14 @@ void srv_init_req(void* p, ax_tcp_req_t* req)
     req->free_write_buf = req_free_write_buf;
     req->read_cbk = req_read_cbk;
     req->write_cbk = req_write_cbk;
-    buff[0]='\0';
+    sprintf(welcome, "\n"
+                     "-- Welcome to the Chat Room --\n"
+                     "-- your name: %13s --\n"
+                     "-- Welcome to the Chat Room --\n", u->name);
     sprintf(buff, "%s joined the room\n", u->name);
+    b.data = welcome;
+    b.len = (ax_i32)strlen(welcome);
+    post_msg_to_user(u, create_msg(AX_NULL, &b));
     b.data = buff;
     b.len = (ax_i32)strlen(buff);
     post_msg_to_users(create_msg(AX_NULL, &b));
