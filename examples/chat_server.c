@@ -237,7 +237,6 @@ int main(int argc, ax_const_str argv[])
     chat.num = chat.next_id = 0;
     CHECK(ax_pool_init(&chat.msgs, sizeof(chat_msg_t)));
 
-    ax_set_log_file(fopen("./chat_server.log", "wb"));
     CHECK(ax_tcp_srv_init_ip4(&chat_srv, ip, atoi(port)));
     ax_tcp_srv_set_ctx(&chat_srv, &ctx);
     ax_tcp_srv_start(&chat_srv);
