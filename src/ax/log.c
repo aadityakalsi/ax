@@ -42,7 +42,7 @@ void* _ax_memrchr(void const* b, int c, size_t l)
     register ax_const_str end = s + l;
     for (; end > s; --end) {
         if (*(end-1) == c) {
-            return (void*)end-1;
+            return (void*)(end-1);
         }
     }
     return AX_NULL;

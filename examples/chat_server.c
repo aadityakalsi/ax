@@ -71,7 +71,7 @@ chat_msg_t* copy_msg(chat_msg_t* m)
 }
 
 static
-chat_msg_t* delete_msg(chat_msg_t* m)
+void delete_msg(chat_msg_t* m)
 {
     if (--(m->ref) == 0) {
         ax_pool_free(&chat.msgs, m);
@@ -87,7 +87,7 @@ chat_msg_t* create_msg(ax_const_str usr, ax_buf_t const* b)
     strcpy(m->usr, usr);
     sprintf(m->msg, "%s: %.*s", usr, b->len, b->data);
     m->ref = 0;
-    m->size = strlen(m->msg);
+    m->size = (int)strlen(m->msg);
     return m;
 }
 
@@ -254,7 +254,9 @@ int main(int argc, ax_const_str argv[])
         srv_destroy_req
     };
 
+#if !AX_MSVC
     signal(SIGPIPE, SIG_IGN);
+#endif
     signal(SIGINT, sigint_hdler);
     
     chat.user.prev = &chat.user;
