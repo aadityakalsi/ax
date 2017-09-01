@@ -1,0 +1,10 @@
+#!/usr/bin/env expect
+
+set timeout 1
+spawn telnet localhost 8080
+expect "room"
+send "foo\r"
+send "bar\r"
+set timeout 1
+send "quit\r"
+set timeout 1

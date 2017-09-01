@@ -15,6 +15,7 @@ For license details see ../LICENSE
 
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 #define CHECK(x)   \
   {                \
@@ -234,6 +235,14 @@ void srv_on_start(void* s)
 {
 }
 
+static
+void sigint_hdler(int sig)
+{
+    ax_tcp_srv_destroy(&chat_srv);
+    ax_pool_destroy(&chat.msgs);
+    exit(sig);
+}
+
 int main(int argc, ax_const_str argv[])
 {
     ax_const_str ip   = argc > 1 ? argv[1] : "localhost";
@@ -245,6 +254,9 @@ int main(int argc, ax_const_str argv[])
         srv_destroy_req
     };
 
+    signal(SIGPIPE, SIG_IGN);
+    signal(SIGINT, sigint_hdler);
+    
     chat.user.prev = &chat.user;
     chat.user.next = &chat.user;
     chat.num = chat.next_id = 0;
