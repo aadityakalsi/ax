@@ -236,6 +236,50 @@ void ax_tcp_cli_set_ctx(ax_tcp_cli_t* cli, ax_tcp_ctx_t const* ctx)
     ((ax_tcp_cli_impl_t*)cli)->ctx = *ctx;
 }
 
+typedef struct outband_write_s outband_write_t;
+struct outband_write_s
+{
+    uv_write_t write;
+    uv_buf_t buf;
+    ax_tcp_req_t* req;
+    void (*free_write_buf)(void* req_ctx, ax_buf_t const* buf);
+    void (*write_cbk)(void* req_ctx, int err);
+};
+
+AX_STATIC_ASSERT(sizeof(outband_write_t) <= sizeof(tcp_cli_conn_t), outband_t_too_large);
+
+static
+void outband_write_cbk(uv_write_t* write, int err)
+{
+    outband_write_t* wreq = BASE_PTR(write, outband_write_t, write);
+    ax_buf_t buf;
+    if (err) {
+        AX_LOG(DBUG, "tcp_cli_write: %s\n", ax_error_str(err));
+    }
+    buf.data = wreq->buf.base;
+    buf.len = (int)wreq->buf.len;
+    wreq->free_write_buf(wreq->req->req_ctx, &buf);
+    wreq->write_cbk(wreq->req->req_ctx, err);
+    _destroy_tcp_client((tcp_cli_conn_t*)wreq);
+}
+
+void ax_tcp_cli_write(ax_tcp_cli_t* cli, ax_tcp_req_t* req, ax_buf_t const* buf,
+                      void (*free_write_buf)(void* req_ctx, ax_buf_t const* buf),
+                      void (*write_cbk)(void* req_ctx, int err))
+{
+    ax_tcp_cli_impl_t* c = (ax_tcp_cli_impl_t*)cli;
+    outband_write_t* wreq;
+    AX_ASSERT(cli_connected(c));
+    wreq = (outband_write_t*)_create_tcp_client();
+    AX_ASSERT(wreq);
+    wreq->req = req;
+    wreq->buf.base = buf->data;
+    wreq->buf.len = (size_t)buf->len;
+    wreq->free_write_buf = free_write_buf;
+    wreq->write_cbk = write_cbk;
+    uv_write(&wreq->write, (uv_stream_t*)&c->server, &wreq->buf, 1, outband_write_cbk);
+}
+
 int ax_tcp_cli_connect(ax_tcp_cli_t* cli)
 {
     ax_tcp_cli_impl_t* c = (ax_tcp_cli_impl_t*)cli;

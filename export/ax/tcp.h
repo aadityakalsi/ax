@@ -13,14 +13,14 @@ For license details see ../../LICENSE
 #include "ax/types.h"
 
 /* buffer type */
-
 AX_STRUCT_TYPE(ax_buf_t)
 {
     ax_str data;
     ax_i32 len;
 };
 
-/* set ax_buf_t::data to these constants to change behaviour */
+/* set ax_buf_t::data to these constants to change from reading to
+   writing or vice versa */
 #define AX_STOP_WRITE_NO_READ    AX_NULL
 #define AX_STOP_WRITE_START_READ ((void*)-1)
 
@@ -29,7 +29,8 @@ AX_STRUCT_TYPE(ax_buf_t)
 
 /* tcp servers */
 
-/* by default, calls ax_tcp_req_t::get_read_buf first */
+/* by default, calls ax_tcp_req_t::get_read_buf first for servers,
+   and ax_tcp_req_t::get_write_buf for clients */
 AX_STRUCT_TYPE(ax_tcp_req_t)
 {
     void* req_ctx;
@@ -44,6 +45,7 @@ AX_STRUCT_TYPE(ax_tcp_req_t)
     void (*write_cbk)(void* req_ctx, int err);
 };
 
+/* context to create and destroy requests */
 AX_STRUCT_TYPE(ax_tcp_ctx_t)
 {
     void* state;
@@ -63,6 +65,7 @@ int ax_tcp_srv_destroy(ax_tcp_srv_t* srv);
 AX_API
 void ax_tcp_srv_set_ctx(ax_tcp_srv_t* srv, ax_tcp_ctx_t const* ctx);
 
+/* for out of band writes */
 AX_API
 void ax_tcp_srv_write(ax_tcp_srv_t* srv, ax_tcp_req_t* req, ax_buf_t const* buf,
                       void (*free_write_buf)(void* req_ctx, ax_buf_t const* buf),
@@ -86,6 +89,12 @@ int ax_tcp_cli_destroy(ax_tcp_cli_t* cli);
 
 AX_API
 void ax_tcp_cli_set_ctx(ax_tcp_cli_t* cli, ax_tcp_ctx_t const* ctx);
+
+/* for out of band writes */
+AX_API
+void ax_tcp_cli_write(ax_tcp_cli_t* cli, ax_tcp_req_t* req, ax_buf_t const* buf,
+                      void (*free_write_buf)(void* req_ctx, ax_buf_t const* buf),
+                      void (*write_cbk)(void* req_ctx, int err));
 
 AX_API
 int ax_tcp_cli_connect(ax_tcp_cli_t* cli);
