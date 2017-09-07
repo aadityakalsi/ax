@@ -37,7 +37,7 @@ int main(int argc, char const* argv[])
     for (i = 0; i < TOTAL; ++i) {
         if (suite != TESTS[i].suite) {
             if (suite) {
-                printf("endsuite: %s\n\n", suite);
+                printf("suite: %s\n\n", suite);
             } else {
                 printf("\n");
             }
@@ -58,7 +58,7 @@ int main(int argc, char const* argv[])
     }
 
     if (suite) {
-        printf("endsuite: %s\n", suite);
+        printf("suite: %s\n", suite);
     }
 
     if (nfail == 0) {
