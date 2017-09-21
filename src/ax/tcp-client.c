@@ -50,7 +50,7 @@ static
 void _cli_on_close(uv_handle_t* h)
 {
     ax_tcp_cli_impl_t* c = BASE_PTR(h, ax_tcp_cli_impl_t, server);
-    AX_LOG(DBUG, "cli_close: closing (client %p)\n", h);
+    AX_LOG(DBUG, "cli_close: closing (client " PER_P ")\n", h);
     AX_ASSERT(c->ctx.destroy_req);
     c->ctx.destroy_req(c->ctx.state, &c->req);
     cli_set_connected(c, 0);
@@ -79,10 +79,10 @@ void _cli_on_read(uv_stream_t* strm, ssize_t nread, uv_buf_t const* buf)
     ax_buf.data = buf->base;
     ax_buf.len = (ax_i32)buf->len;
     if (nread < 0) {
-        AX_LOG(DBUG, "tcp_cli_read_err: (client %p) %s\n", strm, status == 0 ? "OK" : ax_error_str(status));
+        AX_LOG(DBUG, "tcp_cli_read_err: (client " PER_P ") %s\n", strm, status == 0 ? "OK" : ax_error_str(status));
         next = -1;
     } else if (nread > 0) {
-        AX_LOG(INFO, "data recd (client %p):\n--->|\n%.*s|<---\n", strm, (int)nread, buf->base);
+        AX_LOG(INFO, "data recd (client " PER_P "):\n--->|\n%.*s|<---\n", strm, (int)nread, buf->base);
         AX_ASSERT(c->req.read_cbk);
         c->req.read_cbk(c->req.req_ctx, status, &ax_buf);
         next = 1;
@@ -178,7 +178,7 @@ void _cli_set_buf(ax_tcp_cli_impl_t* c)
 static
 void _cli_on_connect(uv_connect_t* conn, int status)
 {
-    AX_LOG(DBUG, "tcp_cli_connect: %s (client %p)\n", status ? ax_error_str(status) : "OK", conn->handle);
+    AX_LOG(DBUG, "tcp_cli_connect: %s (client " PER_P ")\n", status ? ax_error_str(status) : "OK", conn->handle);
     ax_tcp_cli_impl_t* c = BASE_PTR(conn, ax_tcp_cli_impl_t, conn);
     if (status) { return; }
     AX_ASSERT(c->ctx.init_req);

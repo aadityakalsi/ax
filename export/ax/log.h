@@ -41,6 +41,16 @@ For license details see ../../LICENSE
   }                                                                             \
   do { } while (0)
 
+#if AX_MSVC
+#  if AX_BITNESS == 32
+#    define PER_P "0x%x"
+#  else 
+#    define PER_P "0x%llx"
+#  endif
+#else
+#  define PER_P "%p"
+#endif
+
 AX_API
 void ax_set_log_file(FILE* f);
 

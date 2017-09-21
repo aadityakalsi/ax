@@ -119,7 +119,7 @@ void _srv_on_close(uv_handle_t* h)
 {
     tcp_cli_conn_t* conn = BASE_PTR(h, tcp_cli_conn_t, client);
     ax_tcp_srv_impl_t const* s = conn->server;
-    AX_LOG(DBUG, "tcp_srv_close_conn: (client %p)\n", h);
+    AX_LOG(DBUG, "tcp_srv_close_conn: (client " PER_P ")\n", h);
     AX_ASSERT(s->ctx.destroy_req);
     s->ctx.destroy_req(s->ctx.state, &conn->req);
     _destroy_tcp_client((tcp_cli_conn_t*)h);
@@ -163,10 +163,10 @@ void _srv_on_read(uv_stream_t* strm, ssize_t nread, uv_buf_t const* buf)
     ax_buf.data = buf->base;
     ax_buf.len = (ax_i32)nread;
     if (nread < 0) {
-        AX_LOG(DBUG, "tcp_srv_read_err: (client %p) %s\n", strm, status == 0 ? "OK" : ax_error_str(status));
+        AX_LOG(DBUG, "tcp_srv_read_err: (client " PER_P ") %s\n", strm, status == 0 ? "OK" : ax_error_str(status));
         next = -1;
     } else if (nread > 0) {
-        AX_LOG(INFO, "data recd (client %p):\n--->|\n%.*s|<---\n", strm, (int)nread, buf->base);
+        AX_LOG(INFO, "data recd (client " PER_P "):\n--->|\n%.*s|<---\n", strm, (int)nread, buf->base);
         AX_ASSERT(conn->req.read_cbk);
         conn->req.read_cbk(conn->req.req_ctx, status, &ax_buf);
         next = 1;
@@ -206,7 +206,7 @@ void _srv_on_connect(uv_stream_t* strm, int status)
         AX_LOG(DBUG, "tcp_srv_accept: %s\n", ax_error_str(status));
         return;
     }
-    AX_LOG(DBUG, "tcp_srv_open_conn: (client %p)\n", conn);
+    AX_LOG(DBUG, "tcp_srv_open_conn: (client " PER_P ")\n", conn);
 
     AX_ASSERT(s->ctx.init_req);
     s->ctx.init_req(s->ctx.state, &conn->req);
